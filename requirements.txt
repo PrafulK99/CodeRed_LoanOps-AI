@@ -5,3 +5,4 @@ langchain
 openai
 fpdf2
 cryptography
+passlib[bcrypt]

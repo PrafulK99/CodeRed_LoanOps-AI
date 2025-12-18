@@ -5,22 +5,30 @@ Main entry point for the LoanOps AI hackathon project.
 
 Endpoints:
 - GET  /health           - Health check
-- POST /chat             - Main chat interface
+- POST /signup           - User registration
+- POST /login            - User authentication
+- GET  /me               - Get current user
+- POST /logout           - User logout
+- POST /chat             - Main chat interface (requires auth)
 - GET  /applications     - List all loan applications
 - GET  /applications/{id} - Get application details
 - GET  /session/{id}     - Debug: View session
 - DELETE /session/{id}   - Debug: Clear session
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Literal, Any, List
+from typing import Dict, Literal, Any, List, Optional
 from datetime import datetime
 import traceback
+import uuid
 
 # Import loan application models
-from models import LoanApplication, LoanStatus, LoanApplicationResponse, LoanApplicationListResponse
+from models import (
+    LoanApplication, LoanStatus, LoanApplicationResponse, LoanApplicationListResponse,
+    User, EmailAuthRequest, AuthResponse, UserResponse
+)
 
 # Import the LangGraph supervisor
 from agents.master import supervisor_node, create_initial_state
@@ -34,7 +42,12 @@ app = FastAPI(title="Agentic Loan Orchestrator API")
 # Allow CORS for local development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For hackathon demo, allow all
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,8 +85,47 @@ session_store: Dict[str, dict] = {}
 
 application_store: Dict[str, LoanApplication] = {}
 
+# ============================================================================
+# User Store (In-Memory for Hackathon Demo)
+# ============================================================================
 
-def get_or_create_session(session_id: str) -> dict:
+user_store: Dict[str, User] = {}  # user_id -> User
+email_to_user_id: Dict[str, str] = {}  # email -> user_id (for login lookup)
+auth_sessions: Dict[str, str] = {}  # token -> user_id
+
+
+def get_current_user(authorization: Optional[str] = Header(None)) -> Optional[User]:
+    """
+    Extract current user from Authorization header.
+    Returns None if not authenticated (for optional auth).
+    """
+    if not authorization:
+        return None
+    
+    # Expect: "Bearer <token>"
+    parts = authorization.split(" ")
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        return None
+    
+    token = parts[1]
+    user_id = auth_sessions.get(token)
+    if not user_id:
+        return None
+    
+    return user_store.get(user_id)
+
+
+def require_auth(authorization: Optional[str] = Header(None)) -> User:
+    """
+    Require authentication. Raises 401 if not authenticated.
+    """
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return user
+
+
+def get_or_create_session(session_id: str, user_id: Optional[str] = None) -> dict:
     """Get existing session or create a new one using LangGraph initial state."""
     if session_id not in session_store:
         session_store[session_id] = create_initial_state()
@@ -81,10 +133,17 @@ def get_or_create_session(session_id: str) -> dict:
         if session_id not in application_store:
             application_store[session_id] = LoanApplication(
                 application_id=session_id,
+                user_id=user_id,  # Link to authenticated user
                 status=LoanStatus.INITIATED,
                 created_at=datetime.now()
             )
-            print(f"[APPLICATION] Created new application: {session_id}")
+            print(f"[APPLICATION] Created new application: {session_id} (User: {user_id})")
+    else:
+        # Update user_id if not set (for existing sessions)
+        if user_id and session_id in application_store:
+            app = application_store[session_id]
+            if not app.user_id:
+                app.user_id = user_id
     return session_store[session_id]
 
 
@@ -138,10 +197,122 @@ async def health_check():
     return {"status": "ok", "message": "Agentic Loan Orchestrator is running"}
 
 
+# ============================================================================
+# Authentication Endpoints (Email-Only for Hackathon Demo)
+# ============================================================================
+
+@app.post("/signup", response_model=AuthResponse)
+async def signup(request: EmailAuthRequest):
+    """
+    Register a new user with email-only authentication.
+    
+    Email-only auth for hackathon demo - production would use stronger verification.
+    If user already exists, returns success (idempotent).
+    """
+    email = request.email.strip().lower()
+    
+    # Validate email
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Valid email is required")
+    
+    # Check if user already exists
+    if email in email_to_user_id:
+        # User exists - log them in instead (idempotent signup)
+        user_id = email_to_user_id[email]
+        user = user_store.get(user_id)
+        token = str(uuid.uuid4())
+        auth_sessions[token] = user_id
+        print(f"[AUTH] Existing user signup (login): {email}")
+        return AuthResponse(token=token, user_id=user_id, email=email)
+    
+    # Create new user
+    user_id = str(uuid.uuid4())
+    user = User(
+        user_id=user_id,
+        email=email,
+        created_at=datetime.now()
+    )
+    
+    # Store user
+    user_store[user_id] = user
+    email_to_user_id[email] = user_id
+    
+    # Create session token
+    token = str(uuid.uuid4())
+    auth_sessions[token] = user_id
+    
+    print(f"[AUTH] New user signup: {email} (ID: {user_id})")
+    
+    return AuthResponse(token=token, user_id=user_id, email=email)
+
+
+@app.post("/login", response_model=AuthResponse)
+async def login(request: EmailAuthRequest):
+    """
+    Login with email-only authentication.
+    
+    Email-only auth for hackathon demo - production would use stronger verification.
+    """
+    email = request.email.strip().lower()
+    
+    # Validate email
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Valid email is required")
+    
+    # Find user by email
+    user_id = email_to_user_id.get(email)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not found. Please sign up first.")
+    
+    user = user_store.get(user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found. Please sign up first.")
+    
+    # Create session token
+    token = str(uuid.uuid4())
+    auth_sessions[token] = user_id
+    
+    print(f"[AUTH] User login: {email}")
+    
+    return AuthResponse(token=token, user_id=user_id, email=email)
+
+
+@app.get("/me", response_model=UserResponse)
+async def get_me(authorization: Optional[str] = Header(None)):
+    """
+    Get current authenticated user info.
+    """
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    return UserResponse(user_id=user.user_id, email=user.email)
+
+
+@app.post("/logout")
+async def logout(authorization: Optional[str] = Header(None)):
+    """
+    Logout and invalidate session token.
+    """
+    if authorization:
+        parts = authorization.split(" ")
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            token = parts[1]
+            if token in auth_sessions:
+                del auth_sessions[token]
+                return {"status": "ok", "message": "Logged out successfully"}
+    
+    return {"status": "ok", "message": "Logged out"}
+
+
+# ============================================================================
+# Chat Endpoints
+# ============================================================================
 @app.post("/chat", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest):
+async def chat_endpoint(request: ChatRequest, authorization: Optional[str] = Header(None)):
     """
     Main chat endpoint for loan orchestration.
+    Requires authentication - user must be logged in.
     
     Routes messages through the LangGraph supervisor to appropriate agents:
     Sales → Verification → Underwriting → Sanction/Rejected
@@ -149,12 +320,18 @@ async def chat_endpoint(request: ChatRequest):
     Request:
         - session_id: Unique identifier for the conversation session
         - message: User's message text
+        - Authorization header: Bearer token
     
     Response:
         - reply: Bot's response text
         - stage: Current workflow stage
         - active_agent: Currently active agent
     """
+    # Require authentication
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required. Please login to continue.")
+    
     try:
         # Validate input
         if not request.session_id or not request.session_id.strip():
@@ -166,8 +343,8 @@ async def chat_endpoint(request: ChatRequest):
         session_id = request.session_id.strip()
         message = request.message.strip()
         
-        # Get or create session
-        session = get_or_create_session(session_id)
+        # Get or create session (link to authenticated user)
+        session = get_or_create_session(session_id, user.user_id)
         
         # Add user message to history
         session["messages"].append({"role": "user", "content": message})

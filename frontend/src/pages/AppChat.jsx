@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import {
     Send,
     ShieldCheck,
@@ -19,7 +20,9 @@ import {
     Cpu,
     Loader2,
     ArrowRight,
-    ClipboardList
+    ClipboardList,
+    LogOut,
+    UserCircle
 } from 'lucide-react'
 
 // --- TYPEWRITER COMPONENT ---
@@ -131,6 +134,8 @@ const AgentVisualizer = ({ currentStage }) => {
 }
 
 export default function AppChat() {
+    const { user, token, logout } = useAuth()
+
     const [messages, setMessages] = useState([
         { sender: 'bot', text: 'System Initialized. I am your Agentic Loan Orchestrator. How can I assist you today?', timestamp: new Date() }
     ])
@@ -158,7 +163,10 @@ export default function AppChat() {
         try {
             const response = await fetch('http://localhost:8000/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     session_id: sessionIdRef.current,
                     message: userMessage
@@ -218,6 +226,11 @@ export default function AppChat() {
                     </div>
 
                     <div className="relative z-10 hidden sm:flex items-center gap-2">
+                        {/* User indicator */}
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                            <UserCircle size={14} className="text-emerald-600" />
+                            <span className="text-xs font-medium text-emerald-700 max-w-[120px] truncate">{user?.email}</span>
+                        </div>
                         <Link
                             to="/applications"
                             className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors"
@@ -230,12 +243,20 @@ export default function AppChat() {
                             <span className="text-xs font-mono font-semibold text-slate-700">{sessionIdRef.current}</span>
                             <span className="text-slate-300">|</span>
                             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${applicationStatus === 'Sanctioned' || applicationStatus === 'Approved'
-                                    ? 'bg-emerald-100 text-emerald-700'
-                                    : applicationStatus === 'Rejected'
-                                        ? 'bg-red-100 text-red-700'
-                                        : 'bg-blue-100 text-blue-700'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : applicationStatus === 'Rejected'
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-blue-100 text-blue-700'
                                 }`}>{applicationStatus}</span>
                         </div>
+                        {/* Logout button */}
+                        <button
+                            onClick={logout}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Logout"
+                        >
+                            <LogOut size={16} />
+                        </button>
                     </div>
                 </header>
 

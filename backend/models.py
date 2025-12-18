@@ -55,3 +55,42 @@ class LoanApplicationListResponse(BaseModel):
     """Response model for applications list."""
     total: int
     applications: list[LoanApplicationResponse]
+
+
+# ============================================================================
+# User Authentication Models
+# ============================================================================
+
+class User(BaseModel):
+    """
+    Represents a user account.
+    
+    Simple user entity for identification:
+    - Unique ID and email
+    - Creation timestamp for audit
+    
+    Note: Email-only auth for hackathon demo.
+    Production would use stronger verification (e.g., DigiLocker).
+    """
+    user_id: str
+    email: str
+    created_at: datetime
+
+
+class EmailAuthRequest(BaseModel):
+    """Request model for email-only signup/login."""
+    email: str
+
+
+class AuthResponse(BaseModel):
+    """Response model for successful authentication."""
+    token: str
+    user_id: str
+    email: str
+
+
+class UserResponse(BaseModel):
+    """Response model for user info."""
+    user_id: str
+    email: str
+
