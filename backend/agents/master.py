@@ -1,12 +1,15 @@
+"""
+Master Agent (Supervisor)
+=========================
 Orchestrates the flow between specialized agents using a simple state machine.
 
-Flow: Sales → Verification → Underwriting → Sanction/Rejected
+Flow: Sales -> Verification -> Underwriting -> Sanction/Rejected
 
 This is a DEMO-FIRST implementation for hackathon demonstration.
 Stability > Intelligence.
 """
 
-from typing import Dict, Literal, Any
+from typing import Dict, Any
 from agents.sales import sales_agent_node
 from agents.verification import verification_agent_node
 from agents.underwriting import underwriting_agent_node
@@ -52,9 +55,9 @@ def determine_next_stage(state: Dict, user_message: str) -> str:
     
     SIMPLE & DETERMINISTIC routing for demo safety:
     - Start at "sales"
-    - After intent captured → "verification"
-    - After KYC verified → "underwriting"
-    - After underwriting → "sanction" or "rejected"
+    - After intent captured -> "verification"
+    - After KYC verified -> "underwriting"
+    - After underwriting -> "sanction" or "rejected"
     
     TODO: Integrate with actual LangGraph routing when ready.
     """
@@ -66,15 +69,15 @@ def determine_next_stage(state: Dict, user_message: str) -> str:
     
     if current_stage == "sales":
         # Move to verification when user expresses loan intent
-        if any(keyword in message_lower for keyword in ["loan", "lakh", "amount", "borrow", "need", "want", "rupees", "₹"]):
-            print("[SUPERVISOR] Loan intent detected → Moving to VERIFICATION")
+        if any(keyword in message_lower for keyword in ["loan", "lakh", "amount", "borrow", "need", "want", "rupees"]):
+            print("[SUPERVISOR] Loan intent detected -> Moving to VERIFICATION")
             return "verification"
         return "sales"
     
     elif current_stage == "verification":
         # Move to underwriting when verification keywords detected
         if any(keyword in message_lower for keyword in ["pan", "aadhaar", "verified", "confirm", "yes", "proceed", "id"]):
-            print("[SUPERVISOR] Verification confirmed → Moving to UNDERWRITING")
+            print("[SUPERVISOR] Verification confirmed -> Moving to UNDERWRITING")
             return "underwriting"
         return "verification"
     
@@ -83,10 +86,10 @@ def determine_next_stage(state: Dict, user_message: str) -> str:
         # TODO: Plug in real underwriting_rules.check_eligibility() here
         decision = state.get("underwriting_decision")
         if decision == "approved":
-            print("[SUPERVISOR] Loan APPROVED → Moving to SANCTION")
+            print("[SUPERVISOR] Loan APPROVED -> Moving to SANCTION")
             return "sanction"
         elif decision == "rejected":
-            print("[SUPERVISOR] Loan REJECTED → Moving to REJECTED")
+            print("[SUPERVISOR] Loan REJECTED -> Moving to REJECTED")
             return "rejected"
         # Default: stay in underwriting until decision is made
         return "underwriting"
@@ -186,22 +189,33 @@ def supervisor_node(state: Dict, user_message: str) -> Dict[str, Any]:
             "stage": "sales",
             "active_agent": "SalesAgent"
         }
-from backend.services.credit_bureau import fetch_credit_score
-from backend.services.offer_mart import get_preapproved_limit
+
+
+# ============================================================================
+# Underwriting Rules Engine (TODO: Move to rules/underwriting_rules.py)
+# ============================================================================
 
 async def run_underwriting(customer_id: str, loan_details: dict):
     """
-    Underwriting rules engine
+    Underwriting rules engine.
+    
+    TODO: This is placeholder code for the underwriting rules.
+    TODO: Integrate with services/credit_bureau.py and services/offer_mart.py
+    TODO: Move to rules/underwriting_rules.py when services are implemented.
     """
+    # TODO: Import these when services are created
+    # from backend.services.credit_bureau import fetch_credit_score
+    # from backend.services.offer_mart import get_preapproved_limit
 
-    loan_amount = loan_details["amount"]
+    loan_amount = loan_details.get("amount", 0)
     salary = loan_details.get("salary")
     expected_emi = loan_details.get("expected_emi")
 
-    credit_score = fetch_credit_score(customer_id)
-    preapproved_limit = get_preapproved_limit(customer_id)
+    # TODO: Replace with actual service calls
+    credit_score = 750  # Mock: fetch_credit_score(customer_id)
+    preapproved_limit = 100000  # Mock: get_preapproved_limit(customer_id)
 
-    # ❌ Rule 3: Reject if credit score < 700
+    # Rule 3: Reject if credit score < 700
     if credit_score < 700:
         return {
             "status": "rejected",
@@ -209,7 +223,7 @@ async def run_underwriting(customer_id: str, loan_details: dict):
             "credit_score": credit_score
         }
 
-    # ✅ Rule 1: Instant approval
+    # Rule 1: Instant approval if loan <= preapproved limit
     if loan_amount <= preapproved_limit:
         return {
             "status": "approved",
@@ -217,7 +231,7 @@ async def run_underwriting(customer_id: str, loan_details: dict):
             "credit_score": credit_score
         }
 
-    # ⚠️ Rule 2: Salary slip required
+    # Rule 2: Salary slip required if loan <= 2x preapproved limit
     if loan_amount <= 2 * preapproved_limit:
         if not salary or not expected_emi:
             return {
@@ -237,7 +251,7 @@ async def run_underwriting(customer_id: str, loan_details: dict):
             "reason": "EMI exceeds 50% of salary"
         }
 
-    # ❌ Rule 3: Loan amount too high
+    # Rule 3: Loan amount too high
     return {
         "status": "rejected",
         "reason": "Loan amount exceeds eligibility"
