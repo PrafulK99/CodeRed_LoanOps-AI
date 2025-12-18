@@ -216,6 +216,7 @@ export default function Applications() {
                                     <tr className="bg-slate-50 border-b border-slate-100">
                                         <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Application ID</th>
                                         <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Loan Amount</th>
+                                        <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Risk</th>
                                         <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                                         <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Created</th>
                                         <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
@@ -243,6 +244,20 @@ export default function Applications() {
                                                     <DollarSign size={14} className="text-slate-400" />
                                                     <span className="font-medium text-slate-700">{formatAmount(app.loan_amount)}</span>
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {app.risk_level ? (
+                                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold ${app.risk_level === 'Low'
+                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                            : app.risk_level === 'Medium'
+                                                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                                : 'bg-red-50 text-red-700 border border-red-200'
+                                                        }`}>
+                                                        {app.risk_level} ({app.risk_score})
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">—</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <StatusBadge status={app.status} />

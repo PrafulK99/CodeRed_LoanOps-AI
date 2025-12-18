@@ -7,6 +7,7 @@ For demo, auto-approves most loans to show the full flow.
 """
 
 from typing import Dict, Any
+from utils.risk_scoring import compute_risk_score
 
 
 def underwriting_agent_node(state: Dict, user_message: str) -> Dict[str, Any]:
@@ -18,12 +19,14 @@ def underwriting_agent_node(state: Dict, user_message: str) -> Dict[str, Any]:
     - Otherwise -> REJECTED
     - If salary unknown, auto-approve for demo
     
+    Also computes risk score for transparency.
+    
     Args:
         state: Current conversation state
         user_message: User's input message
     
     Returns:
-        Dict with reply and underwriting_decision
+        Dict with reply, underwriting_decision, and risk assessment
     """
     print("[UNDERWRITING AGENT] Processing eligibility...")
     
@@ -32,6 +35,7 @@ def underwriting_agent_node(state: Dict, user_message: str) -> Dict[str, Any]:
     salary = state.get("salary", 50000)  # Default to 50k if not provided
     tenure = state.get("tenure", 24)  # months
     interest_rate = 10.5  # Annual interest rate
+    is_verified = state.get("verified", False)
     
     print(f"[UNDERWRITING AGENT] Loan: {loan_amount}, Salary: {salary}")
     
@@ -46,6 +50,22 @@ def underwriting_agent_node(state: Dict, user_message: str) -> Dict[str, Any]:
     state["interest_rate"] = interest_rate
     
     print(f"[UNDERWRITING AGENT] Calculated EMI: {emi}")
+    
+    # =========================================================================
+    # Compute Risk Score (for transparency, not for decision)
+    # =========================================================================
+    risk_result = compute_risk_score(
+        loan_amount=loan_amount,
+        salary=salary,
+        emi=emi,
+        tenure=tenure,
+        is_verified=is_verified
+    )
+    
+    # Store risk data in state
+    state["risk_score"] = risk_result["risk_score"]
+    state["risk_level"] = risk_result["risk_level"]
+    state["risk_factors"] = risk_result["risk_factors"]
     
     # Decision Rule: EMI should be less than 50% of salary
     emi_to_salary_ratio = emi / salary if salary > 0 else 1
@@ -62,6 +82,8 @@ def underwriting_agent_node(state: Dict, user_message: str) -> Dict[str, Any]:
 - Monthly EMI: Rs. {emi:,.2f}
 - Your Salary: Rs. {salary:,}
 - EMI/Salary Ratio: {emi_to_salary_ratio*100:.1f}% (Max allowed: 50%)
+
+📈 Risk Assessment: {risk_result['risk_level']} ({risk_result['risk_score']}/100)
 
 Your application meets all our eligibility criteria. Proceeding to generate your sanction letter..."""
         
@@ -80,6 +102,8 @@ Your application meets all our eligibility criteria. Proceeding to generate your
 - Your Salary: Rs. {salary:,}
 - EMI/Salary Ratio: {emi_to_salary_ratio*100:.1f}%
 
+📈 Risk Assessment: {risk_result['risk_level']} ({risk_result['risk_score']}/100)
+
 ⚠️ Reason: The EMI exceeds 50% of your monthly salary.
 
 💡 Suggestion: You may consider:
@@ -97,5 +121,9 @@ Thank you for your interest in LoanOps."""
         "emi": emi,
         "loan_amount": loan_amount,
         "salary": salary,
-        "reason": reason
+        "reason": reason,
+        # Risk Assessment Data
+        "risk_score": risk_result["risk_score"],
+        "risk_level": risk_result["risk_level"],
+        "risk_factors": risk_result["risk_factors"]
     }

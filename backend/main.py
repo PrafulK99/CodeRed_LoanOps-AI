@@ -80,6 +80,10 @@ class ChatResponse(BaseModel):
     active_agent: Literal["SalesAgent", "VerificationAgent", "UnderwritingAgent", "SanctionAgent"]
     application_status: str  # Current loan application status
     sanction_letter: Optional[str] = None  # PDF filename when sanctioned
+    # Risk Assessment Fields (from underwriting)
+    risk_score: Optional[int] = None  # 0-100, lower is better
+    risk_level: Optional[str] = None  # Low / Medium / High
+    risk_factors: Optional[List[str]] = None  # Explainable factors
 
 # ============================================================================
 # In-Memory Session State (Minimal, for hackathon demo)
@@ -208,6 +212,16 @@ def update_application_status(session_id: str, stage: str, loan_amount: float = 
     if sanction_letter and new_status == LoanStatus.SANCTIONED:
         app.sanction_letter = sanction_letter
         print(f"[APPLICATION] {session_id} sanction_letter set to: {sanction_letter}")
+    
+    # Update risk assessment data if available
+    risk_score = session.get("risk_score")
+    risk_level = session.get("risk_level")
+    risk_factors = session.get("risk_factors")
+    if risk_score is not None:
+        app.risk_score = risk_score
+        app.risk_level = risk_level
+        app.risk_factors = risk_factors
+        print(f"[APPLICATION] {session_id} risk: {risk_level} ({risk_score}/100)")
 
 
 def get_application_status(session_id: str) -> str:
@@ -394,13 +408,21 @@ async def chat_endpoint(request: ChatRequest, authorization: Optional[str] = Hea
         # Get sanction_letter if available
         sanction_letter = session.get("sanction_letter")
         
+        # Get risk assessment data if available (from underwriting stage)
+        risk_score = session.get("risk_score")
+        risk_level = session.get("risk_level")
+        risk_factors = session.get("risk_factors")
+        
         # Return structured response for frontend
         return ChatResponse(
             reply=result["reply"],
             stage=result["stage"],
             active_agent=result["active_agent"],
             application_status=get_application_status(session_id),
-            sanction_letter=sanction_letter
+            sanction_letter=sanction_letter,
+            risk_score=risk_score,
+            risk_level=risk_level,
+            risk_factors=risk_factors
         )
     
     except HTTPException:
@@ -518,6 +540,9 @@ async def list_applications():
             loan_amount=app.loan_amount,
             status=app.status.value if hasattr(app.status, 'value') else app.status,
             sanction_letter=app.sanction_letter,
+            risk_score=app.risk_score,
+            risk_level=app.risk_level,
+            risk_factors=app.risk_factors,
             created_at=app.created_at
         ))
     
@@ -548,6 +573,9 @@ async def get_application(application_id: str):
         loan_amount=app.loan_amount,
         status=app.status.value if hasattr(app.status, 'value') else app.status,
         sanction_letter=app.sanction_letter,
+        risk_score=app.risk_score,
+        risk_level=app.risk_level,
+        risk_factors=app.risk_factors,
         created_at=app.created_at
     )
 

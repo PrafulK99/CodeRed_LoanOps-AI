@@ -30,6 +30,7 @@ class LoanApplication(BaseModel):
     - Unique ID (matches session_id in LOAN-XXXX format)
     - Status tracking through the agent workflow
     - Loan amount when captured
+    - Risk assessment data
     - Sanction letter filename when approved
     - Timestamps for audit trail
     """
@@ -38,6 +39,10 @@ class LoanApplication(BaseModel):
     loan_amount: Optional[float] = None
     status: LoanStatus = LoanStatus.INITIATED
     sanction_letter: Optional[str] = None  # PDF filename when sanctioned
+    # Risk Assessment Fields
+    risk_score: Optional[int] = None  # 0-100, lower is better
+    risk_level: Optional[str] = None  # Low / Medium / High
+    risk_factors: Optional[list[str]] = None  # Explainable factors
     created_at: datetime
 
     class Config:
@@ -51,6 +56,10 @@ class LoanApplicationResponse(BaseModel):
     loan_amount: Optional[float] = None
     status: str
     sanction_letter: Optional[str] = None
+    # Risk Assessment Fields
+    risk_score: Optional[int] = None
+    risk_level: Optional[str] = None
+    risk_factors: Optional[list[str]] = None
     created_at: datetime
 
 

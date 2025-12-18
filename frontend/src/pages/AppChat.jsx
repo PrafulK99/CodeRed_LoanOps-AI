@@ -24,7 +24,9 @@ import {
     LogOut,
     UserCircle,
     Info,
-    Users
+    Users,
+    AlertTriangle,
+    TrendingUp
 } from 'lucide-react'
 
 // --- TYPEWRITER COMPONENT ---
@@ -157,6 +159,7 @@ export default function AppChat() {
     const [currentStage, setCurrentStage] = useState('sales')
     const [sanctionLetter, setSanctionLetter] = useState(null)
     const [applicationStatus, setApplicationStatus] = useState('Initiated')
+    const [riskAssessment, setRiskAssessment] = useState(null) // { score, level, factors }
 
     const sessionIdRef = useRef(`LOAN-${Math.floor(1000 + Math.random() * 9000)}`)
     const messagesEndRef = useRef(null)
@@ -193,6 +196,14 @@ export default function AppChat() {
             if (data.stage) setCurrentStage(data.stage)
             if (data.application_status) setApplicationStatus(data.application_status)
             if (data.sanction_letter) setSanctionLetter(data.sanction_letter)
+            // Store risk assessment data when available
+            if (data.risk_score !== null && data.risk_score !== undefined) {
+                setRiskAssessment({
+                    score: data.risk_score,
+                    level: data.risk_level,
+                    factors: data.risk_factors || []
+                })
+            }
         } catch {
             setMessages(prev => [
                 ...prev,
@@ -402,6 +413,60 @@ export default function AppChat() {
                             </motion.div>
                         )
                     })()}
+
+                    {/* Risk Assessment Card - Appears after underwriting */}
+                    {riskAssessment && !sanctionLetter && (currentStage === 'sanction' || currentStage === 'rejected') && (
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            className="flex justify-start pl-2"
+                        >
+                            <div className="w-80 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <TrendingUp size={18} className="text-slate-600" />
+                                    <h3 className="text-sm font-bold text-slate-800">Automated Risk Assessment</h3>
+                                </div>
+
+                                {/* Risk Score Display */}
+                                <div className="flex items-center justify-between mb-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                    <div>
+                                        <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Risk Score</p>
+                                        <p className="text-2xl font-bold text-slate-800">{riskAssessment.score}<span className="text-sm text-slate-400 font-normal"> / 100</span></p>
+                                    </div>
+                                    <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase ${riskAssessment.level === 'Low'
+                                            ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                            : riskAssessment.level === 'Medium'
+                                                ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                                                : 'bg-red-100 text-red-700 border border-red-200'
+                                        }`}>
+                                        {riskAssessment.level}
+                                    </span>
+                                </div>
+
+                                {/* Risk Factors */}
+                                <div>
+                                    <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Key Factors</p>
+                                    <div className="space-y-1.5">
+                                        {riskAssessment.factors.map((factor, idx) => (
+                                            <div key={idx} className="flex items-start gap-2 text-xs text-slate-600">
+                                                {factor.startsWith('✓') ? (
+                                                    <CheckCircle2 size={12} className="text-emerald-500 mt-0.5 shrink-0" />
+                                                ) : (
+                                                    <AlertTriangle size={12} className="text-amber-500 mt-0.5 shrink-0" />
+                                                )}
+                                                <span>{factor.replace(/^[✓⚠]\s*/, '')}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Disclaimer */}
+                                <p className="text-[9px] text-slate-400 mt-4 pt-3 border-t border-slate-100 text-center">
+                                    Rule-based assessment for transparency. Does not determine approval.
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
 
                     {sanctionLetter && (
                         <motion.div
