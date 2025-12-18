@@ -10,6 +10,7 @@ import os
 from datetime import datetime
 from typing import Dict, Any
 from fpdf import FPDF
+from utils.crypto_utils import decrypt_data
 
 
 # Ensure the generated folder exists
@@ -219,6 +220,15 @@ def sanction_agent_node(state: Dict, user_message: str) -> Dict[str, Any]:
         Dict with reply and sanction details
     """
     print("[SANCTION AGENT] Processing sanction request...")
+    # Ensure verification completed
+    if not state.get("verified"):
+        print("[SANCTION AGENT] Attempted sanction without verification")
+        return {
+            "reply": "Cannot proceed: verification incomplete. Please complete identity verification first.",
+            "sanction_status": "blocked",
+            "loan_details": None,
+            "pdf_result": None
+        }
     
     # Get session_id from state (fallback to timestamp if not available)
     session_id = state.get("session_id", datetime.now().strftime("%Y%m%d%H%M%S"))
@@ -232,6 +242,19 @@ def sanction_agent_node(state: Dict, user_message: str) -> Dict[str, Any]:
         "emi": state.get("emi", 4650.0),
         "interest_rate": state.get("interest_rate", 10.5),
     }
+
+    # If encrypted verification blob exists, attempt to decrypt to enrich letter
+    encrypted_blob = state.get("verification_encrypted")
+    if encrypted_blob:
+        try:
+            decrypted = decrypt_data(encrypted_blob.encode("utf-8"))
+            # best-effort parse
+            import json
+            parsed = json.loads(decrypted.decode("utf-8"))
+            # prefer name from verified payload
+            loan_details["customer_name"] = parsed.get("name") or parsed.get("full_name") or loan_details["customer_name"]
+        except Exception as e:
+            print(f"[SANCTION AGENT] Failed to decrypt verification blob: {e}")
     
     # Generate PDF sanction letter
     pdf_result = generate_sanction_letter(loan_details)

@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Literal
+from typing import Dict, Literal, Any
 import traceback
 
 # Import the LangGraph supervisor
@@ -41,6 +42,11 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     session_id: str
     message: str
+
+
+class VerificationRequest(BaseModel):
+    session_id: str
+    details: Dict[str, Any]
 
 class ChatResponse(BaseModel):
     reply: str
@@ -134,6 +140,37 @@ async def chat_endpoint(request: ChatRequest):
             stage="sales",
             active_agent="SalesAgent"
         )
+
+
+@app.post("/verify")
+async def verify_endpoint(request: VerificationRequest):
+    """
+    Lightweight verification endpoint.
+
+    Accepts a structured `details` payload from the frontend, delegates to the
+    `verification_agent_node` which encrypts and persists a verification blob
+    in the in-memory session state for demo purposes.
+    """
+    try:
+        if not request.session_id or not request.session_id.strip():
+            raise HTTPException(status_code=400, detail="session_id is required")
+
+        session = get_or_create_session(request.session_id.strip())
+
+        # Call verification agent with the structured details
+        result = verification_agent_node(session, request.details)
+
+        # Append messages for traceability
+        session["messages"].append({"role": "user", "content": "[verification_submitted]"})
+        session["messages"].append({"role": "assistant", "content": result["reply"]})
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[VERIFY ENDPOINT] Error: {e}")
+        raise HTTPException(status_code=500, detail="Verification failed")
 
 
 @app.get("/session/{session_id}")

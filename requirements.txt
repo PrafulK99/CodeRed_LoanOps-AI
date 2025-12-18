@@ -4,3 +4,4 @@ langgraph
 langchain
 openai
 fpdf2
+cryptography
