@@ -209,6 +209,7 @@ def sanction_agent_node(state: Dict, user_message: str) -> Dict[str, Any]:
     Sanction Agent - Handles loan approval finalization.
     
     Generates PDF sanction letter for approved loans.
+    Uses Gemini API to generate natural language explanations (optional, fail-safe).
     
     Args:
         state: Current conversation state
@@ -236,11 +237,39 @@ def sanction_agent_node(state: Dict, user_message: str) -> Dict[str, Any]:
     pdf_result = generate_sanction_letter(loan_details)
     
     if pdf_result["status"] == "generated":
-        reply = f"""LOAN SANCTIONED SUCCESSFULLY!
+        # =====================================================================
+        # USE GEMINI FOR ENHANCED EXPLANATION (OPTIONAL, FAIL-SAFE)
+        # =====================================================================
+        try:
+            from utils.gemini_explainer import generate_explanation
+            
+            explanation = generate_explanation({
+                "status": "APPROVED",
+                "reason": "All eligibility criteria met",
+                "loan_amount": loan_details["loan_amount"],
+                "salary": state.get("salary", "N/A"),
+                "emi": loan_details["emi"]
+            })
+            
+            # Append loan details to Gemini's explanation
+            reply = f"""{explanation}
 
-Here are your approved loan details:
+📄 Loan Summary:
+- Amount: Rs. {loan_details['loan_amount']:,}
+- Interest Rate: {loan_details['interest_rate']}% p.a.
+- Tenure: {loan_details['tenure']} months
+- Monthly EMI: Rs. {loan_details['emi']:,.2f}
 
-Loan Summary:
+Your sanction letter has been generated: {pdf_result['file']}"""
+            
+        except Exception as e:
+            print(f"[SANCTION AGENT] Gemini explainer failed, using default: {e}")
+            # Fallback to default message
+            reply = f"""🎉 LOAN SANCTIONED SUCCESSFULLY!
+
+Congratulations! Your loan application has been approved.
+
+📄 Loan Summary:
 - Amount: Rs. {loan_details['loan_amount']:,}
 - Interest Rate: {loan_details['interest_rate']}% p.a.
 - Tenure: {loan_details['tenure']} months
@@ -252,7 +281,7 @@ Thank you for choosing LoanOps AI! Is there anything else you would like to know
         
         print("[SANCTION AGENT] Loan sanctioned successfully!")
     else:
-        reply = """LOAN APPROVED!
+        reply = """✅ LOAN APPROVED!
 
 Your loan has been approved. However, there was an issue generating the sanction letter.
 Our team will send you the sanction letter shortly via email.
@@ -267,3 +296,4 @@ Thank you for choosing LoanOps AI!"""
         "loan_details": loan_details,
         "pdf_result": pdf_result
     }
+

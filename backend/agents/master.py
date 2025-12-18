@@ -66,24 +66,36 @@ def determine_next_stage(state: Dict, user_message: str) -> str:
     
     print(f"[SUPERVISOR] Current stage: {current_stage}")
     print(f"[SUPERVISOR] User message: {user_message[:50]}...")
+    print(f"[SUPERVISOR] State verified: {state.get('verified')}")
     
     if current_stage == "sales":
         # Move to verification when user expresses loan intent
         if any(keyword in message_lower for keyword in ["loan", "lakh", "amount", "borrow", "need", "want", "rupees"]):
             print("[SUPERVISOR] Loan intent detected -> Moving to VERIFICATION")
+            # Extract loan amount if present
+            _extract_loan_amount(state, user_message)
             return "verification"
         return "sales"
     
     elif current_stage == "verification":
-        # Move to underwriting when verification keywords detected
-        if any(keyword in message_lower for keyword in ["pan", "aadhaar", "verified", "confirm", "yes", "proceed", "id"]):
-            print("[SUPERVISOR] Verification confirmed -> Moving to UNDERWRITING")
+        # CRITICAL FIX: Check if verification is already complete in state
+        # The verification agent sets state["verified"] = True
+        if state.get("verified") == True:
+            print("[SUPERVISOR] Verification COMPLETE (from state) -> Moving to UNDERWRITING")
+            # Extract salary if present in this or previous messages
+            _extract_salary(state, user_message)
             return "underwriting"
+        
+        # Also check keywords as fallback
+        if any(keyword in message_lower for keyword in ["pan", "aadhaar", "verified", "confirm", "yes", "proceed", "id", "salary"]):
+            print("[SUPERVISOR] Verification keywords detected -> Moving to UNDERWRITING")
+            _extract_salary(state, user_message)
+            return "underwriting"
+        
         return "verification"
     
     elif current_stage == "underwriting":
         # Underwriting auto-transitions based on decision
-        # TODO: Plug in real underwriting_rules.check_eligibility() here
         decision = state.get("underwriting_decision")
         if decision == "approved":
             print("[SUPERVISOR] Loan APPROVED -> Moving to SANCTION")
@@ -103,6 +115,60 @@ def determine_next_stage(state: Dict, user_message: str) -> str:
         return "rejected"
     
     return current_stage
+
+
+def _extract_loan_amount(state: Dict, message: str):
+    """Extract loan amount from user message and store in state."""
+    import re
+    # Match patterns like "100000", "1,00,000", "1 lakh", "50000"
+    message_lower = message.lower()
+    
+    # Try to extract number
+    numbers = re.findall(r'[\d,]+', message)
+    for num_str in numbers:
+        try:
+            num = int(num_str.replace(',', ''))
+            if num >= 1000:  # Minimum loan amount
+                state["loan_amount"] = num
+                print(f"[SUPERVISOR] Extracted loan_amount: {num}")
+                return
+        except:
+            pass
+    
+    # Check for "lakh" mentions
+    lakh_match = re.search(r'(\d+)\s*lakh', message_lower)
+    if lakh_match:
+        state["loan_amount"] = int(lakh_match.group(1)) * 100000
+        print(f"[SUPERVISOR] Extracted loan_amount: {state['loan_amount']}")
+
+
+def _extract_salary(state: Dict, message: str):
+    """Extract salary from user message and store in state."""
+    import re
+    message_lower = message.lower()
+    
+    # Match patterns like "salary is 50000", "monthly salary 40000", "earn 30000"
+    salary_match = re.search(r'(?:salary|earn|income|monthly)\s*(?:is|of)?\s*(\d[\d,]*)', message_lower)
+    if salary_match:
+        try:
+            salary = int(salary_match.group(1).replace(',', ''))
+            state["salary"] = salary
+            print(f"[SUPERVISOR] Extracted salary: {salary}")
+            return
+        except:
+            pass
+    
+    # Fallback: look for any number that could be salary
+    numbers = re.findall(r'[\d,]+', message)
+    for num_str in numbers:
+        try:
+            num = int(num_str.replace(',', ''))
+            if 5000 <= num <= 500000:  # Reasonable salary range
+                state["salary"] = num
+                print(f"[SUPERVISOR] Extracted salary (fallback): {num}")
+                return
+        except:
+            pass
 
 
 def supervisor_node(state: Dict, user_message: str) -> Dict[str, Any]:
@@ -154,6 +220,11 @@ def supervisor_node(state: Dict, user_message: str) -> Dict[str, Any]:
         # Update state with any agent-provided data
         if "underwriting_decision" in agent_response:
             state["underwriting_decision"] = agent_response["underwriting_decision"]
+        
+        # CRITICAL: Sync verification status from agent response to state
+        if "verified" in agent_response:
+            state["verified"] = agent_response["verified"]
+            print(f"[SUPERVISOR] Synced verified={state['verified']} from agent response")
         
         # Check if we need to auto-transition after underwriting
         if next_stage == "underwriting" and state.get("underwriting_decision"):
