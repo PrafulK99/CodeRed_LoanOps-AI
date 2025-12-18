@@ -1,24 +1,24 @@
 import { Link } from 'react-router-dom'
-import { ShieldCheck, ArrowRight, Zap, Users, FileCheck, Award } from 'lucide-react'
+import { ShieldCheck, ArrowRight, User, FileSearch, Scale, Gavel, CheckCircle, Info } from 'lucide-react'
 
 export default function Landing() {
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col">
 
             {/* Header */}
             <header className="w-full px-6 py-4 bg-white border-b border-slate-100">
-                <div className="max-w-6xl mx-auto flex items-center justify-between">
+                <div className="max-w-5xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                            <ShieldCheck className="text-white" size={20} />
+                        <div className="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center">
+                            <ShieldCheck className="text-white" size={18} />
                         </div>
                         <span className="text-lg font-bold text-slate-900 tracking-tight">
-                            LOAN<span className="text-blue-600">OPS.</span>
+                            LOAN<span className="text-blue-600">OPS</span>
                         </span>
                     </div>
                     <Link
                         to="/login"
-                        className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors"
+                        className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
                     >
                         Login →
                     </Link>
@@ -26,81 +26,157 @@ export default function Landing() {
             </header>
 
             {/* Hero Section */}
-            <main className="flex-1 flex items-center justify-center px-6 py-20">
+            <section className="w-full px-6 py-16 md:py-24 bg-slate-50">
                 <div className="max-w-3xl mx-auto text-center">
-
-                    {/* Badge */}
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 rounded-full mb-8">
-                        <Zap size={14} className="text-blue-600" />
-                        <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">
-                            AI-Powered Loan Processing
-                        </span>
-                    </div>
-
-                    {/* Title */}
-                    <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight leading-tight">
-                        Agentic Loan Orchestrator
-                        <span className="block text-blue-600">(LoanOps AI)</span>
+                    <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 tracking-tight">
+                        LoanOps AI
                     </h1>
-
-                    {/* Subtitle */}
-                    <p className="text-lg md:text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
-                        AI-orchestrated personal loan processing for NBFCs
+                    <p className="text-lg md:text-xl text-slate-700 mb-3">
+                        AI-assisted micro-loan operations for ₹5,000 – ₹50,000 loans
                     </p>
+                    <p className="text-sm text-slate-500 mb-8">
+                        Human-in-the-loop, rule-based, auditable loan processing
+                    </p>
+                    <div className="flex items-center justify-center gap-4 flex-wrap">
+                        <Link
+                            to="/signup"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors"
+                        >
+                            Try Live Demo
+                            <ArrowRight size={16} />
+                        </Link>
+                        <Link
+                            to="/login"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-700 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+                        >
+                            Login
+                        </Link>
+                    </div>
+                </div>
+            </section>
 
-                    {/* Flow Diagram */}
-                    <div className="flex items-center justify-center gap-2 md:gap-4 mb-12 flex-wrap">
-                        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm">
-                            <Users size={16} className="text-slate-600" />
-                            <span className="text-sm font-medium text-slate-700">Sales</span>
+            {/* How It Works */}
+            <section className="w-full px-6 py-16 bg-white">
+                <div className="max-w-4xl mx-auto">
+                    <h2 className="text-xl font-bold text-slate-900 mb-2 text-center">How It Works</h2>
+                    <p className="text-sm text-slate-500 mb-10 text-center">Four-step loan processing pipeline</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        {/* Step 1 */}
+                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
+                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center mb-4">
+                                <User size={18} className="text-slate-600" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-800 mb-1">1. Loan Request</h3>
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                User submits loan amount and basic details via conversational interface.
+                            </p>
                         </div>
-                        <ArrowRight size={16} className="text-slate-400" />
-                        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm">
-                            <FileCheck size={16} className="text-slate-600" />
-                            <span className="text-sm font-medium text-slate-700">Verification</span>
+
+                        {/* Step 2 */}
+                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
+                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center mb-4">
+                                <FileSearch size={18} className="text-slate-600" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-800 mb-1">2. Identity Verification</h3>
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                Mock verification in demo. Designed for DigiLocker integration in production.
+                            </p>
                         </div>
-                        <ArrowRight size={16} className="text-slate-400" />
-                        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm">
-                            <Zap size={16} className="text-slate-600" />
-                            <span className="text-sm font-medium text-slate-700">Underwriting</span>
+
+                        {/* Step 3 */}
+                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
+                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center mb-4">
+                                <Scale size={18} className="text-slate-600" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-800 mb-1">3. Rule-Based Underwriting</h3>
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                Eligibility determined by predefined policy rules, not AI predictions.
+                            </p>
                         </div>
-                        <ArrowRight size={16} className="text-slate-400" />
-                        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm">
-                            <Award size={16} className="text-slate-600" />
-                            <span className="text-sm font-medium text-slate-700">Sanction</span>
+
+                        {/* Step 4 */}
+                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
+                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center mb-4">
+                                <Gavel size={18} className="text-slate-600" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-800 mb-1">4. Sanction Letter</h3>
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                PDF sanction letter generated for approved applications.
+                            </p>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                    {/* CTA Button */}
-                    <Link
-                        to="/signup"
-                        className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white text-lg font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-lg shadow-slate-300/50"
-                    >
-                        Try Live Demo
-                        <ArrowRight size={20} />
-                    </Link>
-
-                    {/* Loan Scope Guardrail */}
-                    <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-full">
-                        <span className="text-sm font-medium text-slate-600">
-                            Supported Loan Range: <span className="font-semibold text-slate-800">₹5,000 – ₹50,000</span>
-                        </span>
+            {/* Why This Exists */}
+            <section className="w-full px-6 py-16 bg-slate-50 border-y border-slate-100">
+                <div className="max-w-3xl mx-auto">
+                    <div className="flex items-start gap-3 mb-6">
+                        <Info size={20} className="text-blue-600 mt-0.5 shrink-0" />
+                        <h2 className="text-xl font-bold text-slate-900">Why This Exists</h2>
                     </div>
-                    <p className="mt-2 text-xs text-slate-400">
-                        Designed for micro & small-ticket loans
-                    </p>
 
-                    {/* Trust & Compliance Note */}
-                    <p className="mt-6 text-xs text-slate-400">
-                        Designed to support DigiLocker-based identity verification in production.
-                    </p>
+                    <div className="space-y-4 text-sm text-slate-600 leading-relaxed">
+                        <p>
+                            <strong className="text-slate-800">Loan sanctioning is sensitive.</strong> Credit decisions affect real lives and carry regulatory scrutiny. Full automation is not appropriate for most loan products.
+                        </p>
+                        <p>
+                            <strong className="text-slate-800">Micro-loans are different.</strong> Small-ticket loans (₹5,000 – ₹50,000) have simpler eligibility criteria and lower risk profiles. This makes them suitable for AI-assisted operations with human oversight.
+                        </p>
+                        <p>
+                            <strong className="text-slate-800">This is not full automation.</strong> AI handles data collection, conversation flow, and explanation generation. All eligibility decisions are made by deterministic policy rules. Final sanctions are subject to human review.
+                        </p>
+                    </div>
+                </div>
+            </section>
 
-                    {/* Footer Note */}
-                    <p className="mt-4 text-sm text-slate-400">
-                        Built for CodeRed Hackathon • React + FastAPI + AI Agents
+            {/* Trust & Compliance */}
+            <section className="w-full px-6 py-16 bg-white">
+                <div className="max-w-3xl mx-auto">
+                    <h2 className="text-xl font-bold text-slate-900 mb-6 text-center">Trust & Compliance</h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <CheckCircle size={16} className="text-emerald-600 mt-0.5 shrink-0" />
+                            <p className="text-sm text-slate-600">
+                                <strong className="text-slate-800">AI assists, does not approve.</strong> The AI orchestrates conversation and data collection. It does not make credit decisions.
+                            </p>
+                        </div>
+                        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <CheckCircle size={16} className="text-emerald-600 mt-0.5 shrink-0" />
+                            <p className="text-sm text-slate-600">
+                                <strong className="text-slate-800">Deterministic eligibility rules.</strong> Loan approval is based on explicit, auditable policy rules—not opaque model outputs.
+                            </p>
+                        </div>
+                        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <CheckCircle size={16} className="text-emerald-600 mt-0.5 shrink-0" />
+                            <p className="text-sm text-slate-600">
+                                <strong className="text-slate-800">Every loan is logged.</strong> All applications are stored in an auditable registry with full decision history.
+                            </p>
+                        </div>
+                        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <CheckCircle size={16} className="text-emerald-600 mt-0.5 shrink-0" />
+                            <p className="text-sm text-slate-600">
+                                <strong className="text-slate-800">DigiLocker-ready design.</strong> Identity verification architecture supports DigiLocker integration for production use.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="w-full px-6 py-8 bg-slate-900 mt-auto">
+                <div className="max-w-5xl mx-auto text-center">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                        <ShieldCheck className="text-white" size={16} />
+                        <span className="text-sm font-semibold text-white">LoanOps AI</span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                        Built for CodeRed Hackathon • Agentic Loan Orchestrator
                     </p>
                 </div>
-            </main>
+            </footer>
 
         </div>
     )
