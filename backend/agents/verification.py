@@ -4,11 +4,13 @@ Verification Agent
 Structured KYC verification for hackathon demo.
 Handles multi-step KYC form with personal, identity, employment, and document data.
 
-This is a DEMO implementation - no real KYC validation.
+Integrates with Setu PAN Verification API (sandbox) with graceful fallback.
+This is a DEMO implementation - sandbox verification only.
 """
 
 from typing import Dict, Any
 from utils.crypto_utils import encrypt_data
+from utils.pan_verification import verify_pan_sandbox
 import json
 
 
@@ -21,6 +23,11 @@ def verification_agent_node(state: Dict, user_message: Any) -> Dict[str, Any]:
     - Identity Details (PAN, Aadhaar last 4, address)
     - Employment Details (type, income, employer)
     - Document uploads (filenames only)
+
+    Integrates with Setu PAN Verification API (sandbox):
+    - Calls verify_pan_sandbox() for PAN verification
+    - Falls back to simulation if API fails
+    - Never blocks loan flow on verification failure
 
     Args:
         state: Current conversation state
@@ -46,6 +53,23 @@ def verification_agent_node(state: Dict, user_message: Any) -> Dict[str, Any]:
             identity = kyc_data.get("identity", {})
             documents = kyc_data.get("documents", {})
             
+            # ================================================================
+            # PAN Verification via Setu Sandbox API
+            # Validates format first, then falls back to simulation if API fails
+            # Never blocks loan flow regardless of result
+            # ================================================================
+            pan_number = identity.get("panNumber", "")
+            full_name = personal.get("fullName", "")
+            pan_result = verify_pan_sandbox(pan_number, full_name)
+            
+            # Store PAN verification result in state
+            state["pan_verification_status"] = pan_result.get("pan_verified")
+            state["pan_verification_source"] = pan_result.get("verification_source")
+            state["pan_name_on_record"] = pan_result.get("name_on_pan", "")
+            state["pan_format_valid"] = pan_result.get("pan_format_valid", True)
+            
+            print(f"[VERIFICATION AGENT] PAN verification: {pan_result.get('verification_status')}, format_valid: {pan_result.get('pan_format_valid')}")
+            
             # Store customer name for sanction letter
             state["customer_name"] = personal.get("fullName") or name or "Valued Customer"
             
@@ -61,7 +85,7 @@ def verification_agent_node(state: Dict, user_message: Any) -> Dict[str, Any]:
             # Store employment type
             state["employment_type"] = employment.get("employmentType", "Salaried")
             
-            # Store KYC summary for audit
+            # Store KYC summary for audit (includes PAN verification result)
             state["kyc_summary"] = {
                 "personal_submitted": bool(personal.get("fullName")),
                 "identity_submitted": bool(identity.get("panNumber") or identity.get("aadhaarLast4")),
@@ -70,7 +94,12 @@ def verification_agent_node(state: Dict, user_message: Any) -> Dict[str, Any]:
                 "pan_provided": bool(identity.get("panNumber")),
                 "city": identity.get("city", ""),
                 "state": identity.get("state", ""),
-                "verification_mode": "DEMO_SIMULATED"
+                # PAN Verification via Setu Sandbox API
+                "pan_verification_status": pan_result.get("pan_verified"),
+                "pan_verification_source": pan_result.get("verification_source"),
+                "pan_name_on_record": pan_result.get("name_on_pan", ""),
+                "pan_format_valid": pan_result.get("pan_format_valid", True),
+                "verification_mode": "SANDBOX_READY" if pan_result.get("pan_verified") == True else ("INVALID_FORMAT" if pan_result.get("verification_status") == "invalid_format" else "SIMULATED")
             }
             
             # Encrypt sensitive data for demo

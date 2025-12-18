@@ -46,6 +46,7 @@ export default function KYCForm({ sessionId, onComplete }) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
     const [submitted, setSubmitted] = useState(false)
+    const [verificationResult, setVerificationResult] = useState(null) // Store API response with PAN verification
 
     const steps = [
         { id: 1, title: 'Personal Details', icon: User },
@@ -102,6 +103,8 @@ export default function KYCForm({ sessionId, onComplete }) {
             const data = await res.json()
             if (!res.ok) throw new Error(data.detail || 'Verification failed')
 
+            // Store verification result including PAN verification status
+            setVerificationResult(data)
             setSubmitted(true)
 
             // Delay callback to show success state
@@ -133,6 +136,26 @@ export default function KYCForm({ sessionId, onComplete }) {
 
     // Render verification summary after submission
     if (submitted) {
+        // Extract kyc_summary from verification result
+        const kycSummary = verificationResult?.kyc_summary || {}
+        const isPanVerified = kycSummary.pan_verification_status === true
+        const isPanFormatValid = kycSummary.pan_format_valid !== false
+        const isInvalidFormat = kycSummary.verification_mode === 'INVALID_FORMAT'
+        const panSource = kycSummary.pan_verification_source || 'Demo Mode'
+
+        // Determine PAN status display
+        const getPanStatusDisplay = () => {
+            if (isPanVerified) {
+                return { label: '✔ Verified (Sandbox)', bgColor: 'bg-emerald-200', textColor: 'text-emerald-800' }
+            } else if (isInvalidFormat) {
+                return { label: 'Invalid Format', bgColor: 'bg-red-200', textColor: 'text-red-800' }
+            } else {
+                return { label: 'Format Valid (Simulated)', bgColor: 'bg-amber-200', textColor: 'text-amber-800' }
+            }
+        }
+
+        const panStatus = getPanStatusDisplay()
+
         return (
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -148,6 +171,46 @@ export default function KYCForm({ sessionId, onComplete }) {
                 </div>
 
                 <div className="space-y-3 mb-6">
+                    {/* PAN Verification Status - Primary Display */}
+                    <div className={`flex items-start gap-3 p-3 rounded-xl border ${isPanVerified
+                            ? 'bg-emerald-50 border-emerald-100'
+                            : isInvalidFormat
+                                ? 'bg-red-50 border-red-100'
+                                : 'bg-amber-50 border-amber-100'
+                        }`}>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${isPanVerified ? 'bg-emerald-200' : isInvalidFormat ? 'bg-red-200' : 'bg-amber-200'
+                            }`}>
+                            {isPanVerified ? (
+                                <CheckCircle2 size={14} className="text-emerald-700" />
+                            ) : isInvalidFormat ? (
+                                <AlertCircle size={14} className="text-red-700" />
+                            ) : (
+                                <Info size={14} className="text-amber-700" />
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-sm font-semibold text-slate-700">PAN Verification:</span>
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${panStatus.bgColor} ${panStatus.textColor}`}>
+                                    {panStatus.label}
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-500">
+                                Source: {panSource}
+                            </p>
+                            {isInvalidFormat && (
+                                <p className="text-xs text-red-600 mt-1">
+                                    Note: PAN must follow standard format (ABCDE1234F)
+                                </p>
+                            )}
+                            {kycSummary.pan_name_on_record && (
+                                <p className="text-xs text-slate-600 mt-1">
+                                    Name on PAN: {kycSummary.pan_name_on_record}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
                         <CheckCircle2 size={16} className="text-emerald-600" />
                         <span className="text-sm text-slate-700">Personal details received</span>
@@ -168,11 +231,21 @@ export default function KYCForm({ sessionId, onComplete }) {
                     )}
                 </div>
 
+                {/* Compliance & Transparency Notice (MANDATORY) */}
+                <div className="flex items-start gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200 mb-3">
+                    <Shield size={14} className="text-slate-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-slate-500">
+                        This demo validates PAN structure locally.
+                        Identity verification is simulated.
+                        Production systems verify PAN using authorized APIs with user consent.
+                    </p>
+                </div>
+
                 <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
                     <Info size={16} className="text-blue-600 shrink-0 mt-0.5" />
                     <p className="text-xs text-slate-600">
-                        <span className="font-semibold text-blue-700">Demo Mode:</span> Verification simulated for demo purposes.
-                        In production, identity documents would be verified using DigiLocker APIs.
+                        <span className="font-semibold text-blue-700">Demo Mode:</span> Real-time PAN verification supported in production.
+                        Identity documents would be verified using DigiLocker/Setu APIs.
                     </p>
                 </div>
             </motion.div>
@@ -202,17 +275,17 @@ export default function KYCForm({ sessionId, onComplete }) {
                             <button
                                 onClick={() => setCurrentStep(step.id)}
                                 className={`flex flex-col items-center gap-1 ${currentStep === step.id
-                                        ? 'opacity-100'
-                                        : currentStep > step.id
-                                            ? 'opacity-70'
-                                            : 'opacity-40'
+                                    ? 'opacity-100'
+                                    : currentStep > step.id
+                                        ? 'opacity-70'
+                                        : 'opacity-40'
                                     }`}
                             >
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === step.id
-                                        ? 'bg-blue-600 text-white'
-                                        : currentStep > step.id
-                                            ? 'bg-emerald-100 text-emerald-600'
-                                            : 'bg-slate-100 text-slate-400'
+                                    ? 'bg-blue-600 text-white'
+                                    : currentStep > step.id
+                                        ? 'bg-emerald-100 text-emerald-600'
+                                        : 'bg-slate-100 text-slate-400'
                                     }`}>
                                     {currentStep > step.id ? (
                                         <CheckCircle2 size={16} />
