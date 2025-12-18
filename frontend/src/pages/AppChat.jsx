@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import {
     Send,
     ShieldCheck,
@@ -17,7 +18,8 @@ import {
     Gavel,
     Cpu,
     Loader2,
-    ArrowRight
+    ArrowRight,
+    ClipboardList
 } from 'lucide-react'
 
 // --- TYPEWRITER COMPONENT ---
@@ -136,6 +138,7 @@ export default function AppChat() {
     const [isLoading, setIsLoading] = useState(false)
     const [currentStage, setCurrentStage] = useState('sales')
     const [sanctionLetter, setSanctionLetter] = useState(null)
+    const [applicationStatus, setApplicationStatus] = useState('Initiated')
 
     const sessionIdRef = useRef(`LOAN-${Math.floor(1000 + Math.random() * 9000)}`)
     const messagesEndRef = useRef(null)
@@ -166,6 +169,7 @@ export default function AppChat() {
             setMessages(prev => [...prev, { sender: 'bot', text: data.reply, timestamp: new Date() }])
 
             if (data.stage) setCurrentStage(data.stage)
+            if (data.application_status) setApplicationStatus(data.application_status)
             if (data.sanction_letter) setSanctionLetter(data.sanction_letter)
         } catch {
             setMessages(prev => [
@@ -214,9 +218,23 @@ export default function AppChat() {
                     </div>
 
                     <div className="relative z-10 hidden sm:flex items-center gap-2">
+                        <Link
+                            to="/applications"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors"
+                        >
+                            <ClipboardList size={14} className="text-slate-500" />
+                            <span className="text-xs font-medium text-slate-600">Applications</span>
+                        </Link>
                         <div className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm flex items-center gap-2">
                             <span className="text-[10px] font-bold text-slate-400 uppercase">ID</span>
                             <span className="text-xs font-mono font-semibold text-slate-700">{sessionIdRef.current}</span>
+                            <span className="text-slate-300">|</span>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${applicationStatus === 'Sanctioned' || applicationStatus === 'Approved'
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : applicationStatus === 'Rejected'
+                                        ? 'bg-red-100 text-red-700'
+                                        : 'bg-blue-100 text-blue-700'
+                                }`}>{applicationStatus}</span>
                         </div>
                     </div>
                 </header>
