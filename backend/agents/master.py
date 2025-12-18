@@ -14,6 +14,7 @@ from agents.sales import sales_agent_node
 from agents.verification import verification_agent_node
 from agents.underwriting import underwriting_agent_node
 from agents.sanction import sanction_agent_node
+from backend.utils.state import create_initial_state
 
 # ============================================================================
 # LangGraph State Definition (Simple Dict)

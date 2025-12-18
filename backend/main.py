@@ -17,7 +17,12 @@ from typing import Dict, Literal
 import traceback
 
 # Import the LangGraph supervisor
-from agents.master import supervisor_node, create_initial_state
+from .agents.master import supervisor_node
+from .agents.sales import sales_agent_node
+from .agents.verification import verification_agent_node
+from .agents.underwriting import underwriting_agent_node
+from .agents.sanction import sanction_agent_node
+from backend.agents.master import create_initial_state
 
 app = FastAPI(title="Agentic Loan Orchestrator API")
 
