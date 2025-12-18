@@ -1,53 +1,135 @@
 """
 Verification Agent
 ==================
-Mock KYC verification for hackathon demo.
-Simplified verification for reliable demo flow.
+Structured KYC verification for hackathon demo.
+Handles multi-step KYC form with personal, identity, employment, and document data.
 
 This is a DEMO implementation - no real KYC validation.
 """
 
 from typing import Dict, Any
+from utils.crypto_utils import encrypt_data
+import json
 
 
 def verification_agent_node(state: Dict, user_message: Any) -> Dict[str, Any]:
     """
     Verification Agent - Handles KYC and identity verification.
 
-    SIMPLIFIED LOGIC for hackathon demo:
-    - Verification succeeds if user message contains BOTH:
-      1. "name:" (case-insensitive)
-      2. "government id:" (case-insensitive)
-    - No extraction, no parsing, no validation
-    - This ensures deterministic demo behavior
+    Accepts structured KYC data from the frontend form:
+    - Personal Details (name, DOB, mobile, email)
+    - Identity Details (PAN, Aadhaar last 4, address)
+    - Employment Details (type, income, employer)
+    - Document uploads (filenames only)
 
     Args:
         state: Current conversation state
-        user_message: User's input message
+        user_message: User's input message or structured KYC dict
 
     Returns:
         Dict with reply and verification status
     """
-    # Log short preview
-    try:
-        preview = str(user_message)[:50]
-    except Exception:
-        preview = "<unreadable>"
+    print(f"[VERIFICATION AGENT] Processing KYC submission...")
 
-    print(f"[VERIFICATION AGENT] Processing: {preview}...")
+    # Check if this is a structured KYC submission (dict with 'name' and/or 'kyc_data')
+    if isinstance(user_message, dict):
+        # Structured KYC form submission
+        name = user_message.get("name", "")
+        kyc_data = user_message.get("kyc_data", {})
+        
+        print(f"[VERIFICATION AGENT] Structured KYC submission for: {name}")
+        
+        # Extract and store relevant data in state
+        if kyc_data:
+            personal = kyc_data.get("personal", {})
+            employment = kyc_data.get("employment", {})
+            identity = kyc_data.get("identity", {})
+            documents = kyc_data.get("documents", {})
+            
+            # Store customer name for sanction letter
+            state["customer_name"] = personal.get("fullName") or name or "Valued Customer"
+            
+            # Store salary for underwriting calculations
+            monthly_income = employment.get("monthlyIncome", "")
+            if monthly_income:
+                try:
+                    state["salary"] = float(monthly_income)
+                    print(f"[VERIFICATION AGENT] Stored salary: {state['salary']}")
+                except ValueError:
+                    state["salary"] = 50000  # Default
+            
+            # Store employment type
+            state["employment_type"] = employment.get("employmentType", "Salaried")
+            
+            # Store KYC summary for audit
+            state["kyc_summary"] = {
+                "personal_submitted": bool(personal.get("fullName")),
+                "identity_submitted": bool(identity.get("panNumber") or identity.get("aadhaarLast4")),
+                "employment_submitted": bool(employment.get("monthlyIncome")),
+                "documents_uploaded": bool(documents.get("panCard") or documents.get("idProof") or documents.get("incomeProof")),
+                "pan_provided": bool(identity.get("panNumber")),
+                "city": identity.get("city", ""),
+                "state": identity.get("state", ""),
+                "verification_mode": "DEMO_SIMULATED"
+            }
+            
+            # Encrypt sensitive data for demo
+            try:
+                sensitive_data = json.dumps({
+                    "name": state["customer_name"],
+                    "pan": identity.get("panNumber", "")[:5] + "XXXXX" if identity.get("panNumber") else "",
+                    "aadhaar_last4": identity.get("aadhaarLast4", ""),
+                    "mobile": personal.get("mobileNumber", ""),
+                    "verified_at": kyc_data.get("submittedAt", "")
+                })
+                encrypted = encrypt_data(sensitive_data.encode("utf-8"))
+                state["verification_encrypted"] = encrypted.decode("utf-8")
+            except Exception as e:
+                print(f"[VERIFICATION AGENT] Encryption failed: {e}")
+        
+        # Mark verification as complete
+        state["verified"] = True
+        state["verification_status"] = "verified"
+        
+        # Build verification summary
+        summary_items = []
+        if state.get("kyc_summary", {}).get("personal_submitted"):
+            summary_items.append("✓ Personal details verified")
+        if state.get("kyc_summary", {}).get("identity_submitted"):
+            summary_items.append("✓ Identity documents submitted")
+        if state.get("kyc_summary", {}).get("employment_submitted"):
+            summary_items.append("✓ Employment information recorded")
+        if state.get("kyc_summary", {}).get("documents_uploaded"):
+            summary_items.append("✓ Supporting documents uploaded")
+        
+        summary_text = "\n".join(summary_items) if summary_items else "✓ KYC information received"
+        
+        reply = f"""✅ KYC Verification Complete
 
-    # Convert to string and lowercase for simple substring check
+{summary_text}
+
+ℹ️ Verification simulated for demo purposes.
+In production, identity would be verified using DigiLocker APIs.
+
+Now proceeding to evaluate your loan eligibility..."""
+
+        print("[VERIFICATION AGENT] VERIFIED via structured KYC - Moving to underwriting")
+
+        return {
+            "reply": reply,
+            "verification_status": "verified",
+            "verified": True,
+            "kyc_summary": state.get("kyc_summary", {})
+        }
+
+    # Legacy text-based verification (fallback)
     message_lower = str(user_message).lower()
-
-    # SIMPLIFIED VERIFICATION CHECK:
-    # Success if message contains BOTH "name:" AND "government id:"
     has_name = "name:" in message_lower
     has_gov_id = "government id:" in message_lower
 
-    print(f"[VERIFICATION AGENT] has_name={has_name}, has_gov_id={has_gov_id}")
+    print(f"[VERIFICATION AGENT] Legacy mode: has_name={has_name}, has_gov_id={has_gov_id}")
 
     if has_name and has_gov_id:
-        # Mark verification as complete in STATE
         state["verified"] = True
         state["verification_status"] = "verified"
 
@@ -56,7 +138,7 @@ def verification_agent_node(state: Dict, user_message: Any) -> Dict[str, Any]:
             "Your details have been recorded. Now proceeding to evaluate your loan eligibility..."
         )
 
-        print("[VERIFICATION AGENT] VERIFIED - Moving to underwriting")
+        print("[VERIFICATION AGENT] VERIFIED via legacy - Moving to underwriting")
 
         return {
             "reply": reply,
@@ -64,19 +146,18 @@ def verification_agent_node(state: Dict, user_message: Any) -> Dict[str, Any]:
             "verified": True
         }
 
-    # Missing required format - provide clear, guided instructions
+    # Missing required format - prompt for KYC form
     state["verified"] = False
     state["verification_status"] = "pending"
 
     return {
         "reply": (
             "To continue, I need to verify your identity.\n\n"
-            "Please reply in the following format:\n"
-            "Name: <Your full name>\n"
-            "Government ID: <Your ID number>\n\n"
-            "For example:\n"
-            "Name: Rahul Sharma\n"
-            "Government ID: ABCDE1234F"
+            "Please complete the KYC verification form with your:\n"
+            "• Personal details (name, contact)\n"
+            "• Identity documents (PAN, Aadhaar)\n"
+            "• Employment information\n\n"
+            "This information is required to process your loan application."
         ),
         "verification_status": "pending",
         "verified": False

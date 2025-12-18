@@ -354,6 +354,76 @@ async def logout(authorization: Optional[str] = Header(None)):
 
 
 # ============================================================================
+# KYC Verification Endpoint
+# ============================================================================
+
+class VerifyRequest(BaseModel):
+    session_id: str
+    details: dict  # Structured KYC data from frontend form
+
+
+class VerifyResponse(BaseModel):
+    status: str
+    reply: str
+    verified: bool
+    kyc_summary: Optional[dict] = None
+
+
+@app.post("/verify", response_model=VerifyResponse)
+async def verify_endpoint(request: VerifyRequest, authorization: Optional[str] = Header(None)):
+    """
+    KYC Verification endpoint.
+    Accepts structured KYC data from the frontend form and processes verification.
+    
+    Request:
+        - session_id: Unique session identifier
+        - details: Structured KYC data (personal, identity, employment, documents)
+    
+    Returns:
+        - status: "verified" or "pending"
+        - reply: Human-readable response
+        - verified: Boolean verification status
+        - kyc_summary: Summary of submitted KYC data
+    """
+    try:
+        session_id = request.session_id
+        
+        # Get or create session
+        if session_id not in session_store:
+            session_store[session_id] = {
+                "messages": [],
+                "stage": "verification",
+                "loan_amount": None,
+                "session_id": session_id
+            }
+        
+        session = session_store[session_id]
+        
+        # Import verification agent
+        from agents.verification import verification_agent_node
+        
+        # Process KYC data through verification agent
+        result = verification_agent_node(session, request.details)
+        
+        # Update session with verification results
+        session["verified"] = result.get("verified", False)
+        session["verification_status"] = result.get("verification_status", "pending")
+        
+        print(f"[VERIFY] Session {session_id}: verified={session['verified']}")
+        
+        return VerifyResponse(
+            status=result.get("verification_status", "pending"),
+            reply=result.get("reply", "Verification processed"),
+            verified=result.get("verified", False),
+            kyc_summary=result.get("kyc_summary")
+        )
+        
+    except Exception as e:
+        print(f"[VERIFY ERROR] {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Verification error: {str(e)}")
+
+
+# ============================================================================
 # Chat Endpoints
 # ============================================================================
 @app.post("/chat", response_model=ChatResponse)

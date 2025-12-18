@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import KYCForm from '../components/KYCForm'
 import {
     Send,
     ShieldCheck,
@@ -170,6 +171,7 @@ export default function AppChat() {
     const sessionIdRef = useRef(`LOAN-${Math.floor(1000 + Math.random() * 9000)}`)
     const messagesEndRef = useRef(null)
     const [showEntryBanner, setShowEntryBanner] = useState(true)
+    const [showKYCForm, setShowKYCForm] = useState(false) // Show structured KYC form
 
     // Agent-specific messages for orchestration playback
     const orchestrationMessages = {
@@ -291,6 +293,11 @@ export default function AppChat() {
                 if (data.stage) setCurrentStage(data.stage)
                 if (data.application_status) setApplicationStatus(data.application_status)
                 if (data.sanction_letter) setSanctionLetter(data.sanction_letter)
+
+                // Show KYC form when entering verification stage
+                if (data.stage === 'verification' && !showKYCForm) {
+                    setShowKYCForm(true)
+                }
 
                 if (data.risk_score !== null && data.risk_score !== undefined) {
                     setRiskAssessment({
@@ -552,6 +559,70 @@ export default function AppChat() {
                         )
                     })()}
 
+                    {/* KYC Form - Appears during verification stage */}
+                    {showKYCForm && currentStage === 'verification' && (
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            className="flex justify-start pl-2 w-full max-w-md"
+                        >
+                            <KYCForm
+                                sessionId={sessionIdRef.current}
+                                onComplete={async (data) => {
+                                    setShowKYCForm(false)
+                                    // Add verification success message
+                                    setMessages(prev => [...prev, {
+                                        sender: 'bot',
+                                        text: data.reply || '✅ KYC Verification Complete. Now proceeding to credit evaluation...',
+                                        timestamp: new Date(),
+                                        stage: 'verification'
+                                    }])
+                                    // Proceed to underwriting by sending a message
+                                    setIsLoading(true)
+                                    try {
+                                        const response = await fetch('http://localhost:8000/chat', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'Authorization': `Bearer ${token}`
+                                            },
+                                            body: JSON.stringify({
+                                                session_id: sessionIdRef.current,
+                                                message: 'proceed to underwriting'
+                                            })
+                                        })
+                                        const result = await response.json()
+                                        if (result.stage) setCurrentStage(result.stage)
+                                        if (result.application_status) setApplicationStatus(result.application_status)
+
+                                        // Check for orchestration
+                                        const shouldOrchestrate = (
+                                            result.stage === 'sanction' ||
+                                            result.stage === 'rejected' ||
+                                            result.risk_score !== undefined
+                                        )
+
+                                        if (shouldOrchestrate && result.risk_score !== undefined) {
+                                            setPendingResponse(result)
+                                            setIsOrchestrating(true)
+                                        } else {
+                                            setMessages(prev => [...prev, {
+                                                sender: 'bot',
+                                                text: result.reply,
+                                                timestamp: new Date(),
+                                                stage: result.stage
+                                            }])
+                                            setIsLoading(false)
+                                        }
+                                    } catch (err) {
+                                        console.error('Post-KYC error:', err)
+                                        setIsLoading(false)
+                                    }
+                                }}
+                            />
+                        </motion.div>
+                    )}
+
                     {/* Risk Assessment Card - Appears after underwriting */}
                     {riskAssessment && !sanctionLetter && (currentStage === 'sanction' || currentStage === 'rejected') && (
                         <motion.div
@@ -630,13 +701,13 @@ export default function AppChat() {
                                     {/* Policy Decision Badge */}
                                     {decisionInfo && (
                                         <div className={`mb-4 p-3 rounded-xl border ${decisionInfo.type === 'AUTOMATED'
-                                                ? 'bg-blue-50 border-blue-200'
-                                                : 'bg-amber-50 border-amber-200'
+                                            ? 'bg-blue-50 border-blue-200'
+                                            : 'bg-amber-50 border-amber-200'
                                             }`}>
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${decisionInfo.type === 'AUTOMATED'
-                                                        ? 'bg-blue-100 text-blue-700'
-                                                        : 'bg-amber-100 text-amber-700'
+                                                    ? 'bg-blue-100 text-blue-700'
+                                                    : 'bg-amber-100 text-amber-700'
                                                     }`}>
                                                     {decisionInfo.type === 'AUTOMATED' ? 'Auto-Approved' : 'Human Review'}
                                                 </span>
