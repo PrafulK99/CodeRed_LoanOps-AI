@@ -156,6 +156,8 @@ def update_application_status(session_id: str, stage: str, loan_amount: float = 
     - underwriting -> Verified
     - sanction -> Approved -> Sanctioned
     - rejected -> Rejected
+    
+    CRITICAL: Includes hard guard to prevent sanction without verification
     """
     if session_id not in application_store:
         return
@@ -165,6 +167,11 @@ def update_application_status(session_id: str, stage: str, loan_amount: float = 
     # Update loan amount if provided
     if loan_amount:
         app.loan_amount = loan_amount
+    
+    # CRITICAL VERIFICATION GUARD:
+    # Before setting SANCTIONED or VERIFIED status, check if session is actually verified
+    session = session_store.get(session_id, {})
+    is_verified = session.get("verified") == True and session.get("verification_status") == "verified"
     
     # Map stage to status
     stage_to_status = {
@@ -176,6 +183,13 @@ def update_application_status(session_id: str, stage: str, loan_amount: float = 
     }
     
     new_status = stage_to_status.get(stage)
+    
+    # HARD GUARD: Prevent sanction/verified status if not actually verified
+    if new_status in [LoanStatus.SANCTIONED, LoanStatus.VERIFIED]:
+        if not is_verified:
+            print(f"[APPLICATION] BLOCKED: Cannot set {new_status.value} - verification not complete")
+            new_status = LoanStatus.INITIATED  # Keep as INITIATED if not verified
+    
     if new_status and new_status != app.status:
         app.status = new_status
         print(f"[APPLICATION] {session_id} status updated to: {new_status.value}")

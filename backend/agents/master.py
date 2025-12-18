@@ -78,20 +78,17 @@ def determine_next_stage(state: Dict, user_message: str) -> str:
         return "sales"
     
     elif current_stage == "verification":
-        # CRITICAL FIX: Check if verification is already complete in state
-        # The verification agent sets state["verified"] = True
-        if state.get("verified") == True:
-            print("[SUPERVISOR] Verification COMPLETE (from state) -> Moving to UNDERWRITING")
+        # CRITICAL: HARD GUARD - Only move to underwriting if EXPLICITLY verified
+        # This ensures no loan can ever be sanctioned without verification
+        if state.get("verified") == True and state.get("verification_status") == "verified":
+            print("[SUPERVISOR] Verification COMPLETE (verified=True) -> Moving to UNDERWRITING")
             # Extract salary if present in this or previous messages
             _extract_salary(state, user_message)
             return "underwriting"
         
-        # Also check keywords as fallback
-        if any(keyword in message_lower for keyword in ["pan", "aadhaar", "verified", "confirm", "yes", "proceed", "id", "salary"]):
-            print("[SUPERVISOR] Verification keywords detected -> Moving to UNDERWRITING")
-            _extract_salary(state, user_message)
-            return "underwriting"
-        
+        # If not verified, ALWAYS stay in verification stage
+        # Do NOT use keyword-based fallback - this was causing unverified sanctions
+        print("[SUPERVISOR] Verification PENDING - staying in VERIFICATION stage")
         return "verification"
     
     elif current_stage == "underwriting":

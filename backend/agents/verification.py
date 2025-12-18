@@ -2,28 +2,28 @@
 Verification Agent
 ==================
 Mock KYC verification for hackathon demo.
-Auto-approves any user response to proceed with the flow.
+Simplified verification for reliable demo flow.
 
 This is a DEMO implementation - no real KYC validation.
 """
 
 from typing import Dict, Any
-import json
-from utils.crypto_utils import encrypt_data
 
 
 def verification_agent_node(state: Dict, user_message: Any) -> Dict[str, Any]:
     """
     Verification Agent - Handles KYC and identity verification.
 
-    New behavior:
-    - Accepts either a free-text `user_message` or a `dict` of details.
-    - Encrypts sensitive verification details and stores an encrypted blob in `state`.
-    - Performs minimal field validation and marks session as verified for demo purposes.
+    SIMPLIFIED LOGIC for hackathon demo:
+    - Verification succeeds if user message contains BOTH:
+      1. "name:" (case-insensitive)
+      2. "government id:" (case-insensitive)
+    - No extraction, no parsing, no validation
+    - This ensures deterministic demo behavior
 
     Args:
         state: Current conversation state
-        user_message: User's input message or details dict
+        user_message: User's input message
 
     Returns:
         Dict with reply and verification status
@@ -36,38 +36,24 @@ def verification_agent_node(state: Dict, user_message: Any) -> Dict[str, Any]:
 
     print(f"[VERIFICATION AGENT] Processing: {preview}...")
 
-    # If details were sent as a dict (preferred), use them
-    details = None
-    if isinstance(user_message, dict):
-        details = user_message
-    else:
-        # Fallback: try to parse JSON string
-        try:
-            details = json.loads(user_message)
-        except Exception:
-            details = {"raw_response": str(user_message)}
+    # Convert to string and lowercase for simple substring check
+    message_lower = str(user_message).lower()
 
-    # Minimal validation: require at least name and id_number (demo)
-    name = details.get("name") or details.get("full_name")
-    id_number = details.get("id_number") or details.get("id")
+    # SIMPLIFIED VERIFICATION CHECK:
+    # Success if message contains BOTH "name:" AND "government id:"
+    has_name = "name:" in message_lower
+    has_gov_id = "government id:" in message_lower
 
-    if name and id_number:
-        # Encrypt the full details payload (demo: persistent key in repo)
-        try:
-            payload_bytes = json.dumps(details).encode("utf-8")
-            token = encrypt_data(payload_bytes)
-            state["verification_encrypted"] = token.decode("utf-8")
-        except Exception as e:
-            print(f"[VERIFICATION AGENT] Encryption failed: {e}")
+    print(f"[VERIFICATION AGENT] has_name={has_name}, has_gov_id={has_gov_id}")
 
+    if has_name and has_gov_id:
         # Mark verification as complete in STATE
         state["verified"] = True
         state["verification_status"] = "verified"
-        state["customer_name"] = name
 
         reply = (
-            "Verification completed successfully! Your identity has been verified. "
-            "Now proceeding to evaluate your loan eligibility..."
+            "✓ Identity verification successful!\n\n"
+            "Your details have been recorded. Now proceeding to evaluate your loan eligibility..."
         )
 
         print("[VERIFICATION AGENT] VERIFIED - Moving to underwriting")
@@ -75,13 +61,23 @@ def verification_agent_node(state: Dict, user_message: Any) -> Dict[str, Any]:
         return {
             "reply": reply,
             "verification_status": "verified",
-            "verified": True,
-            "encrypted_blob": state.get("verification_encrypted")
+            "verified": True
         }
 
-    # Missing required fields
+    # Missing required format - provide clear, guided instructions
+    state["verified"] = False
+    state["verification_status"] = "pending"
+
     return {
-        "reply": "Verification failed: please provide your full name and government ID number.",
+        "reply": (
+            "To continue, I need to verify your identity.\n\n"
+            "Please reply in the following format:\n"
+            "Name: <Your full name>\n"
+            "Government ID: <Your ID number>\n\n"
+            "For example:\n"
+            "Name: Rahul Sharma\n"
+            "Government ID: ABCDE1234F"
+        ),
         "verification_status": "pending",
         "verified": False
     }
