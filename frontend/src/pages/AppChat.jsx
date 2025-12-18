@@ -383,7 +383,10 @@ export default function AppChat() {
                                             <span className="text-xs text-slate-500">Risk Assessment Complete</span>
                                         </div>
                                     </div>
-                                    <button className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-xs tracking-widest uppercase hover:bg-black transition-colors flex items-center justify-center gap-2 group/btn">
+                                    <button
+                                        onClick={() => window.open(`http://localhost:8000/files/${sanctionLetter}`, '_blank')}
+                                        className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-xs tracking-widest uppercase hover:bg-black transition-colors flex items-center justify-center gap-2 group/btn"
+                                    >
                                         <Download size={16} className="group-hover/btn:animate-bounce" />
                                         Download PDF
                                     </button>

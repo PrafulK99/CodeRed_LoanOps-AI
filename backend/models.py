@@ -30,12 +30,14 @@ class LoanApplication(BaseModel):
     - Unique ID (matches session_id in LOAN-XXXX format)
     - Status tracking through the agent workflow
     - Loan amount when captured
+    - Sanction letter filename when approved
     - Timestamps for audit trail
     """
     application_id: str  # Same as session_id (LOAN-XXXX format)
     user_id: Optional[str] = None
     loan_amount: Optional[float] = None
     status: LoanStatus = LoanStatus.INITIATED
+    sanction_letter: Optional[str] = None  # PDF filename when sanctioned
     created_at: datetime
 
     class Config:
@@ -48,6 +50,7 @@ class LoanApplicationResponse(BaseModel):
     user_id: Optional[str] = None
     loan_amount: Optional[float] = None
     status: str
+    sanction_letter: Optional[str] = None
     created_at: datetime
 
 

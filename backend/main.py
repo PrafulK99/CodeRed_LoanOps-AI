@@ -18,6 +18,7 @@ Endpoints:
 
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Dict, Literal, Any, List, Optional
 from datetime import datetime
@@ -53,6 +54,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount generated files for PDF downloads
+app.mount(
+    "/files",
+    StaticFiles(directory="generated"),
+    name="files"
+)
+
 # ============================================================================
 # Pydantic Models for Request/Response
 # ============================================================================
@@ -71,6 +79,7 @@ class ChatResponse(BaseModel):
     stage: Literal["sales", "verification", "underwriting", "sanction", "rejected"]
     active_agent: Literal["SalesAgent", "VerificationAgent", "UnderwritingAgent", "SanctionAgent"]
     application_status: str  # Current loan application status
+    sanction_letter: Optional[str] = None  # PDF filename when sanctioned
 
 # ============================================================================
 # In-Memory Session State (Minimal, for hackathon demo)
@@ -193,6 +202,12 @@ def update_application_status(session_id: str, stage: str, loan_amount: float = 
     if new_status and new_status != app.status:
         app.status = new_status
         print(f"[APPLICATION] {session_id} status updated to: {new_status.value}")
+    
+    # Update sanction_letter if available in session
+    sanction_letter = session.get("sanction_letter")
+    if sanction_letter and new_status == LoanStatus.SANCTIONED:
+        app.sanction_letter = sanction_letter
+        print(f"[APPLICATION] {session_id} sanction_letter set to: {sanction_letter}")
 
 
 def get_application_status(session_id: str) -> str:
@@ -376,12 +391,16 @@ async def chat_endpoint(request: ChatRequest, authorization: Optional[str] = Hea
         loan_amount = session.get("loan_amount")
         update_application_status(session_id, result["stage"], loan_amount)
         
+        # Get sanction_letter if available
+        sanction_letter = session.get("sanction_letter")
+        
         # Return structured response for frontend
         return ChatResponse(
             reply=result["reply"],
             stage=result["stage"],
             active_agent=result["active_agent"],
-            application_status=get_application_status(session_id)
+            application_status=get_application_status(session_id),
+            sanction_letter=sanction_letter
         )
     
     except HTTPException:
@@ -498,6 +517,7 @@ async def list_applications():
             user_id=app.user_id,
             loan_amount=app.loan_amount,
             status=app.status.value if hasattr(app.status, 'value') else app.status,
+            sanction_letter=app.sanction_letter,
             created_at=app.created_at
         ))
     
@@ -527,6 +547,7 @@ async def get_application(application_id: str):
         user_id=app.user_id,
         loan_amount=app.loan_amount,
         status=app.status.value if hasattr(app.status, 'value') else app.status,
+        sanction_letter=app.sanction_letter,
         created_at=app.created_at
     )
 

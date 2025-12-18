@@ -11,7 +11,8 @@ import {
     AlertCircle,
     Loader2,
     DollarSign,
-    ShieldCheck
+    ShieldCheck,
+    Download
 } from 'lucide-react'
 
 // Status badge component with color coding
@@ -217,6 +218,7 @@ export default function Applications() {
                                         <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Loan Amount</th>
                                         <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                                         <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Created</th>
+                                        <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -250,6 +252,19 @@ export default function Applications() {
                                                     <Clock size={14} />
                                                     {formatDateTime(app.created_at)}
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {app.status === 'Sanctioned' && app.sanction_letter ? (
+                                                    <button
+                                                        onClick={() => window.open(`http://localhost:8000/files/${app.sanction_letter}`, '_blank')}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-medium text-blue-700 transition-colors"
+                                                    >
+                                                        <Download size={12} />
+                                                        Download PDF
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">—</span>
+                                                )}
                                             </td>
                                         </motion.tr>
                                     ))}

@@ -313,10 +313,15 @@ Thank you for choosing LoanOps AI!"""
         
         print(f"[SANCTION AGENT] Loan approved but PDF failed: {pdf_result.get('error')}")
     
+    # Store sanction letter filename in state for application tracking
+    if pdf_result["status"] == "generated":
+        state["sanction_letter"] = pdf_result["file"]
+    
     return {
         "reply": reply,
         "sanction_status": "completed",
         "loan_details": loan_details,
-        "pdf_result": pdf_result
+        "pdf_result": pdf_result,
+        "sanction_letter": pdf_result.get("file")
     }
 
