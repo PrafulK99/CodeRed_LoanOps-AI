@@ -50,13 +50,16 @@ const Typewriter = ({ text, onComplete }) => {
     return <span>{displayedText}</span>
 }
 
-// --- AGENT ROLE MAPPING ---
+// --- AGENT ROLE MAPPING (Professional fintech naming) ---
 const getAgentInfo = (stage) => {
     const agents = {
-        sales: { name: 'Sales Agent', icon: User, color: 'text-blue-600', bg: 'bg-blue-100' },
-        credit: { name: 'Verification Agent', icon: FileSearch, color: 'text-amber-600', bg: 'bg-amber-100' },
-        risk: { name: 'Underwriting Agent', icon: Scale, color: 'text-purple-600', bg: 'bg-purple-100' },
-        sanction: { name: 'Sanction Agent', icon: Gavel, color: 'text-emerald-600', bg: 'bg-emerald-100' }
+        sales: { name: 'Sales Agent', icon: User, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
+        verification: { name: 'Verification Agent', icon: FileSearch, color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-200' },
+        credit: { name: 'Credit Analyst', icon: FileSearch, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
+        underwriting: { name: 'Risk & Credit Agent', icon: Scale, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
+        risk: { name: 'Risk Engine', icon: Scale, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
+        sanction: { name: 'Decision Engine', icon: Gavel, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+        rejected: { name: 'Decision Engine', icon: Gavel, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' }
     }
     return agents[stage] || agents.sales
 }
@@ -153,7 +156,7 @@ export default function AppChat() {
     const { user, token, logout } = useAuth()
 
     const [messages, setMessages] = useState([
-        { sender: 'bot', text: 'Hello! I\'m here to help you with your loan application. Let me know what type of loan you\'re looking for, and I\'ll guide you through the process step by step.', timestamp: new Date(), stage: 'sales' }
+        { sender: 'bot', text: 'Good day. I am your loan application assistant. Please let me know the loan amount you require, and I will guide you through the process.', timestamp: new Date(), stage: 'sales' }
     ])
     const [inputText, setInputText] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -177,9 +180,9 @@ export default function AppChat() {
     // Agent-specific messages for orchestration playback
     // Professional loan officer tone - clear, calm, informative
     const orchestrationMessages = {
-        credit: "Reviewing your financial profile...",
-        risk: "Assessing eligibility based on our criteria...",
-        sanction: "One moment — preparing your decision..."
+        credit: "Reviewing financial profile and credit history...",
+        risk: "Evaluating eligibility against lending criteria...",
+        sanction: "Finalizing decision based on assessment..."
     }
 
     useEffect(() => {
@@ -192,10 +195,22 @@ export default function AppChat() {
 
         const runOrchestration = async () => {
             const steps = ['credit', 'risk', 'sanction']
+            const systemLabels = {
+                credit: 'Credit analysis initiated',
+                risk: 'Risk assessment in progress',
+                sanction: 'Decision engine processing'
+            }
 
             for (const step of steps) {
                 setOrchestrationStep(step)
                 setCurrentStage(step === 'credit' ? 'credit' : step === 'risk' ? 'risk' : 'sanction')
+
+                // Add system status message
+                setMessages(prev => [...prev, {
+                    sender: 'system',
+                    text: systemLabels[step],
+                    timestamp: new Date()
+                }])
 
                 // Add orchestration message
                 setMessages(prev => [...prev, {
@@ -209,6 +224,13 @@ export default function AppChat() {
                 // Wait for effect
                 await new Promise(resolve => setTimeout(resolve, 900 + Math.random() * 300))
             }
+
+            // Add decision logged system message
+            setMessages(prev => [...prev, {
+                sender: 'system',
+                text: 'Decision logged and recorded',
+                timestamp: new Date()
+            }])
 
             // After all steps complete, show the final response
             const data = pendingResponse
@@ -467,11 +489,29 @@ export default function AppChat() {
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-32 space-y-8 z-10 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto px-6 md:px-10 pt-6 pb-32 space-y-6 z-10 scrollbar-hide">
                     <AnimatePresence mode="popLayout">
                         {messages.map((msg, index) => {
                             const isUser = msg.sender === 'user';
+                            const isSystem = msg.sender === 'system';
                             const isLast = index === messages.length - 1;
+
+                            // System messages (trust indicators)
+                            if (isSystem) {
+                                return (
+                                    <motion.div
+                                        key={index}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="flex justify-center"
+                                    >
+                                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-full">
+                                            <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                                            <span className="text-xs text-slate-500 font-medium">{msg.text}</span>
+                                        </div>
+                                    </motion.div>
+                                )
+                            }
 
                             return (
                                 <motion.div
@@ -487,19 +527,21 @@ export default function AppChat() {
                                             {!isUser && (() => {
                                                 const agentInfo = getAgentInfo(msg.stage || currentStage)
                                                 return (
-                                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${agentInfo.color}`}>
-                                                        {agentInfo.name}
-                                                    </span>
+                                                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${agentInfo.bg} border ${agentInfo.border}`}>
+                                                        <span className={`text-[10px] font-semibold uppercase tracking-wide ${agentInfo.color}`}>
+                                                            {agentInfo.name}
+                                                        </span>
+                                                    </div>
                                                 )
                                             })()}
                                             {isUser && (
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                                    Applicant
+                                                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide px-2.5 py-1 bg-slate-100 rounded-full border border-slate-200">
+                                                    You
                                                 </span>
                                             )}
-                                            <span className="text-[10px] text-slate-300">•</span>
                                             <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                                <Clock size={10} /> {formatTime(msg.timestamp)}
+                                                <Clock size={10} />
+                                                {formatTime(msg.timestamp)}
                                             </span>
                                         </div>
 

@@ -216,7 +216,7 @@ function ProtectedRoute({ children }) {
 }
 
 function AuthRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth()
+  const { loading } = useAuth()
 
   if (loading) {
     return (
@@ -226,10 +226,8 @@ function AuthRoute({ children }) {
     )
   }
 
-  if (isAuthenticated) {
-    return <Navigate to="/app" replace />
-  }
-
+  // Always show login/signup pages (don't auto-redirect to /app)
+  // This allows demo users to see the authentication flow
   return children
 }
 

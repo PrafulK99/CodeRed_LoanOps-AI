@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, ArrowRight, User, FileSearch, Scale, Gavel, CheckCircle, Info, ChevronDown } from 'lucide-react'
+import { ShieldCheck, ArrowRight, User, FileSearch, Scale, Gavel, CheckCircle, Info, ChevronDown, Lock, Sliders, BadgeCheck, MessageSquare, BarChart3, GitBranch, FileText } from 'lucide-react'
 import FAQChatbot from '../components/FAQChatbot'
 
 // Static FAQ data - no backend, no LLM, deterministic
@@ -209,55 +209,181 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* How It Works */}
-            <section id="how-it-works" className="w-full px-6 py-16 bg-white scroll-mt-8">
-                <div className="max-w-4xl mx-auto">
-                    <h2 className="text-xl font-bold text-slate-900 mb-2 text-center">How It Works</h2>
-                    <p className="text-sm text-slate-500 mb-10 text-center">Four-step loan processing pipeline</p>
+            {/* How It Works — Agent Flow */}
+            <section id="how-it-works" className="w-full px-6 py-20 bg-white scroll-mt-8">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-14">
+                        <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-3">How LoanOps AI Works</h2>
+                        <p className="text-slate-600 max-w-xl mx-auto">
+                            A step-by-step, agent-driven loan processing flow
+                        </p>
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        {/* Step 1 */}
-                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
-                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center mb-4">
-                                <User size={18} className="text-slate-600" />
+                    {/* Desktop: Horizontal Flow with Arrows */}
+                    <div className="hidden lg:flex items-stretch justify-between gap-3">
+
+                        {/* Step 1 — Sales Agent */}
+                        <div className="group flex-1 bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-blue-200 hover:scale-[1.02] transition-all duration-200">
+                            <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
+                                <MessageSquare size={20} className="text-blue-600" />
                             </div>
-                            <h3 className="text-sm font-semibold text-slate-800 mb-1">1. Loan Request</h3>
+                            <h3 className="text-sm font-semibold text-slate-800 mb-2">Sales Agent</h3>
                             <p className="text-xs text-slate-500 leading-relaxed">
-                                User submits loan amount and basic details via conversational interface.
+                                Understands customer intent, loan amount, and tenure requirements.
                             </p>
                         </div>
 
-                        {/* Step 2 */}
-                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
-                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center mb-4">
-                                <FileSearch size={18} className="text-slate-600" />
+                        {/* Arrow */}
+                        <div className="flex items-center justify-center w-8 shrink-0">
+                            <ArrowRight size={18} className="text-slate-300" />
+                        </div>
+
+                        {/* Step 2 — Verification Agent (ACTIVE) */}
+                        <div className="group flex-1 bg-white border-2 border-blue-300 rounded-xl p-5 shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 relative">
+                            <div className="absolute -top-2.5 left-4">
+                                <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-semibold rounded-full uppercase tracking-wide">Active</span>
                             </div>
-                            <h3 className="text-sm font-semibold text-slate-800 mb-1">2. Identity Verification</h3>
+                            <div className="w-11 h-11 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+                                <ShieldCheck size={20} className="text-white" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-800 mb-2">Verification Agent</h3>
                             <p className="text-xs text-slate-500 leading-relaxed">
-                                Mock verification in demo. Designed for DigiLocker integration in production.
+                                Performs KYC checks including PAN, documents, and optional Video KYC.
                             </p>
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="flex items-center justify-center w-8 shrink-0">
+                            <ArrowRight size={18} className="text-slate-300" />
+                        </div>
+
+                        {/* Step 3 — Risk & Credit Agent */}
+                        <div className="group flex-1 bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-blue-200 hover:scale-[1.02] transition-all duration-200">
+                            <div className="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-amber-100 transition-colors">
+                                <BarChart3 size={20} className="text-amber-600" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-800 mb-2">Risk & Credit Agent</h3>
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                Evaluates risk score and eligibility using predefined lending rules.
+                            </p>
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="flex items-center justify-center w-8 shrink-0">
+                            <ArrowRight size={18} className="text-slate-300" />
+                        </div>
+
+                        {/* Step 4 — Decision Engine */}
+                        <div className="group flex-1 bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-blue-200 hover:scale-[1.02] transition-all duration-200">
+                            <div className="w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-indigo-100 transition-colors">
+                                <GitBranch size={20} className="text-indigo-600" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-800 mb-2">Decision Engine</h3>
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                Automatically approves small loans or routes larger amounts for human review.
+                            </p>
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="flex items-center justify-center w-8 shrink-0">
+                            <ArrowRight size={18} className="text-slate-300" />
+                        </div>
+
+                        {/* Step 5 — Sanction Generator */}
+                        <div className="group flex-1 bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-blue-200 hover:scale-[1.02] transition-all duration-200">
+                            <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
+                                <FileText size={20} className="text-emerald-600" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-800 mb-2">Sanction Generator</h3>
+                            <p className="text-xs text-slate-500 leading-relaxed">
+                                Generates a loan sanction summary and downloadable letter.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Mobile/Tablet: Vertical Flow */}
+                    <div className="lg:hidden space-y-4">
+
+                        {/* Step 1 */}
+                        <div className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                                <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                                    <MessageSquare size={20} className="text-blue-600" />
+                                </div>
+                                <div className="w-0.5 flex-1 bg-slate-200 my-2"></div>
+                            </div>
+                            <div className="flex-1 pb-4">
+                                <h3 className="text-sm font-semibold text-slate-800 mb-1">Sales Agent</h3>
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                    Understands customer intent, loan amount, and tenure requirements.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Step 2 (Active) */}
+                        <div className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                                <div className="w-11 h-11 bg-blue-500 rounded-xl flex items-center justify-center shrink-0 ring-2 ring-blue-200">
+                                    <ShieldCheck size={20} className="text-white" />
+                                </div>
+                                <div className="w-0.5 flex-1 bg-slate-200 my-2"></div>
+                            </div>
+                            <div className="flex-1 pb-4">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="text-sm font-semibold text-slate-800">Verification Agent</h3>
+                                    <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-semibold rounded uppercase">Active</span>
+                                </div>
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                    Performs KYC checks including PAN, documents, and optional Video KYC.
+                                </p>
+                            </div>
                         </div>
 
                         {/* Step 3 */}
-                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
-                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center mb-4">
-                                <Scale size={18} className="text-slate-600" />
+                        <div className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                                <div className="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center shrink-0">
+                                    <BarChart3 size={20} className="text-amber-600" />
+                                </div>
+                                <div className="w-0.5 flex-1 bg-slate-200 my-2"></div>
                             </div>
-                            <h3 className="text-sm font-semibold text-slate-800 mb-1">3. Rule-Based Underwriting</h3>
-                            <p className="text-xs text-slate-500 leading-relaxed">
-                                Eligibility determined by predefined policy rules, not AI predictions.
-                            </p>
+                            <div className="flex-1 pb-4">
+                                <h3 className="text-sm font-semibold text-slate-800 mb-1">Risk & Credit Agent</h3>
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                    Evaluates risk score and eligibility using predefined lending rules.
+                                </p>
+                            </div>
                         </div>
 
                         {/* Step 4 */}
-                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
-                            <div className="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center mb-4">
-                                <Gavel size={18} className="text-slate-600" />
+                        <div className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                                <div className="w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
+                                    <GitBranch size={20} className="text-indigo-600" />
+                                </div>
+                                <div className="w-0.5 flex-1 bg-slate-200 my-2"></div>
                             </div>
-                            <h3 className="text-sm font-semibold text-slate-800 mb-1">4. Sanction Letter</h3>
-                            <p className="text-xs text-slate-500 leading-relaxed">
-                                PDF sanction letter generated for approved applications.
-                            </p>
+                            <div className="flex-1 pb-4">
+                                <h3 className="text-sm font-semibold text-slate-800 mb-1">Decision Engine</h3>
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                    Automatically approves small loans or routes larger amounts for human review.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Step 5 */}
+                        <div className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                                <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
+                                    <FileText size={20} className="text-emerald-600" />
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-sm font-semibold text-slate-800 mb-1">Sanction Generator</h3>
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                    Generates a loan sanction summary and downloadable letter.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -285,36 +411,62 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* Trust & Compliance */}
-            <section className="w-full px-6 py-16 bg-white">
-                <div className="max-w-3xl mx-auto">
-                    <h2 className="text-xl font-bold text-slate-900 mb-6 text-center">Trust & Compliance</h2>
+            {/* Trust & Credibility */}
+            <section className="w-full px-6 py-20 bg-slate-50/50">
+                <div className="max-w-5xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-2xl font-bold text-slate-900 mb-3">Built for Trust</h2>
+                        <p className="text-slate-600 max-w-xl mx-auto">
+                            Responsible AI design with real-world fintech constraints in mind
+                        </p>
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                            <CheckCircle size={16} className="text-emerald-600 mt-0.5 shrink-0" />
-                            <p className="text-sm text-slate-600">
-                                <strong className="text-slate-800">AI assists, does not approve.</strong> The AI orchestrates conversation and data collection. It does not make credit decisions.
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+                        {/* Card 1 — Human-in-the-Loop */}
+                        <div className="group bg-white rounded-xl p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+                            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
+                                <User size={24} className="text-blue-600" />
+                            </div>
+                            <h3 className="text-base font-semibold text-slate-800 mb-2">Human-in-the-Loop</h3>
+                            <p className="text-sm text-slate-500 leading-relaxed">
+                                AI assists the process. Final decisions can be reviewed by humans for safety and compliance.
                             </p>
                         </div>
-                        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                            <CheckCircle size={16} className="text-emerald-600 mt-0.5 shrink-0" />
-                            <p className="text-sm text-slate-600">
-                                <strong className="text-slate-800">Deterministic eligibility rules.</strong> Loan approval is based on explicit, auditable policy rules—not opaque model outputs.
+
+                        {/* Card 2 — Secure by Design */}
+                        <div className="group bg-white rounded-xl p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+                            <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
+                                <Lock size={24} className="text-emerald-600" />
+                            </div>
+                            <h3 className="text-base font-semibold text-slate-800 mb-2">Secure by Design</h3>
+                            <p className="text-sm text-slate-500 leading-relaxed">
+                                Sensitive data is encrypted and handled with audit-ready controls.
                             </p>
                         </div>
-                        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                            <CheckCircle size={16} className="text-emerald-600 mt-0.5 shrink-0" />
-                            <p className="text-sm text-slate-600">
-                                <strong className="text-slate-800">Every loan is logged.</strong> All applications are stored in an auditable registry with full decision history.
+
+                        {/* Card 3 — Realistic Automation */}
+                        <div className="group bg-white rounded-xl p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+                            <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-amber-100 transition-colors">
+                                <Sliders size={24} className="text-amber-600" />
+                            </div>
+                            <h3 className="text-base font-semibold text-slate-800 mb-2">Realistic Automation</h3>
+                            <p className="text-sm text-slate-500 leading-relaxed">
+                                Designed for micro-loans where automation is practical and responsible.
                             </p>
                         </div>
-                        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                            <CheckCircle size={16} className="text-emerald-600 mt-0.5 shrink-0" />
-                            <p className="text-sm text-slate-600">
-                                <strong className="text-slate-800">DigiLocker-ready design.</strong> Identity verification architecture supports DigiLocker integration for production use.
+
+                        {/* Card 4 — Compliance Aware */}
+                        <div className="group bg-white rounded-xl p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+                            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-4 group-hover:bg-indigo-100 transition-colors">
+                                <BadgeCheck size={24} className="text-indigo-600" />
+                            </div>
+                            <h3 className="text-base font-semibold text-slate-800 mb-2">Compliance Aware</h3>
+                            <p className="text-sm text-slate-500 leading-relaxed">
+                                Built with awareness of KYC, DigiLocker, and regulatory workflows.
                             </p>
                         </div>
+
                     </div>
                 </div>
             </section>
