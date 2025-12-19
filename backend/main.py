@@ -476,7 +476,7 @@ async def chat_endpoint(request: ChatRequest, authorization: Optional[str] = Hea
         # Call the LangGraph Supervisor
         # This is the core orchestration - routes to appropriate agent
         # ======================================================================
-        result = supervisor_node(session, message)
+        result = await supervisor_node(session, message)
         
         # Add bot response to history
         session["messages"].append({"role": "assistant", "content": result["reply"]})

@@ -10,10 +10,36 @@ Stability > Intelligence.
 """
 
 from typing import Dict, Any
+import asyncio
 from agents.sales import sales_agent_node
 from agents.verification import verification_agent_node
 from agents.underwriting import underwriting_agent_node
 from agents.sanction import sanction_agent_node
+
+
+# ============================================================================
+# DEMO MODE: Controlled Delays for Observability (DEMO-ONLY)
+# ============================================================================
+# Set DEMO_MODE = False to disable all intentional delays.
+# These delays exist ONLY to make agent transitions visible during demos.
+# They do NOT affect decision logic or loan outcomes.
+# ============================================================================
+DEMO_MODE = True
+DEMO_TRANSITION_DELAY = 1.5  # seconds between agent transitions
+
+
+async def demo_delay(seconds: float = DEMO_TRANSITION_DELAY):
+    """
+    DEMO-ONLY: Add intentional delay between agent transitions.
+    
+    This enables demo observers to visually track which agent is active.
+    Does not affect decision logic or outcomes in any way.
+    
+    Args:
+        seconds: Delay duration (default: DEMO_TRANSITION_DELAY)
+    """
+    if DEMO_MODE:
+        await asyncio.sleep(seconds)
 
 # ============================================================================
 # LangGraph State Definition (Simple Dict)
@@ -185,7 +211,7 @@ def _extract_salary(state: Dict, message: str):
             pass
 
 
-def supervisor_node(state: Dict, user_message: str) -> Dict[str, Any]:
+async def supervisor_node(state: Dict, user_message: str) -> Dict[str, Any]:
     """
     Main supervisor function that orchestrates the agent workflow.
     
@@ -234,6 +260,9 @@ def supervisor_node(state: Dict, user_message: str) -> Dict[str, Any]:
                 state["stage"] = "underwriting"
                 state["active_agent"] = "UnderwritingAgent"
                 
+                # DEMO-ONLY: Delay before underwriting for visibility
+                await demo_delay()
+                
                 # Run underwriting agent
                 agent_response = underwriting_agent_node(state, user_message)
                 
@@ -241,6 +270,10 @@ def supervisor_node(state: Dict, user_message: str) -> Dict[str, Any]:
                 if state.get("underwriting_decision") == "approved":
                     state["stage"] = "sanction"
                     state["active_agent"] = "SanctionAgent"
+                    
+                    # DEMO-ONLY: Delay before sanction for visibility
+                    await demo_delay()
+                    
                     sanction_response = sanction_agent_node(state, user_message)
                     return {
                         "reply": sanction_response.get("reply", agent_response.get("reply")),
@@ -317,6 +350,9 @@ Proceeding to evaluate your loan eligibility..."""
             # Clear the acknowledged flag after using it
             state["verification_acknowledged"] = False
             
+            # DEMO-ONLY: Delay before underwriting for visibility
+            await demo_delay()
+            
             # Now run underwriting immediately
             agent_response = underwriting_agent_node(state, user_message)
             reply = agent_response.get("reply", reply)
@@ -340,6 +376,9 @@ Proceeding to evaluate your loan eligibility..."""
             
             # Get sanction/rejection message
             if final_stage == "sanction":
+                # DEMO-ONLY: Delay before sanction for visibility
+                await demo_delay()
+                
                 sanction_response = sanction_agent_node(state, user_message)
                 reply = sanction_response.get("reply", reply)
             elif final_stage == "rejected":

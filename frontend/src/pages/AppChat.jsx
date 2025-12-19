@@ -174,10 +174,11 @@ export default function AppChat() {
     const [showKYCForm, setShowKYCForm] = useState(false) // Show structured KYC form
 
     // Agent-specific messages for orchestration playback
+    // DEMO: Descriptive messages to help observers understand what each agent does
     const orchestrationMessages = {
-        credit: "Evaluating credit eligibility based on income and EMI ratios...",
-        risk: "Computing automated risk score and contributing factors...",
-        sanction: "Finalizing decision and generating sanction letter..."
+        credit: "Analyzing identity documents and credit history...",
+        risk: "Evaluating eligibility against policy rules...",
+        sanction: "Generating final sanction decision..."
     }
 
     useEffect(() => {
