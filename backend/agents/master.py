@@ -243,9 +243,10 @@ async def supervisor_node(state: Dict, user_message: str) -> Dict[str, Any]:
         
         # ================================================================
         # CRITICAL: Orchestration Pause Check (BEFORE any routing)
-        # When paused, NO agents may execute until user acknowledges
+        # STEP 4: When paused, NO agents may execute until user acknowledges
         # ================================================================
         if state.get("orchestration_paused"):
+            print("[MASTER] Orchestration paused. Blocking downstream agents.")
             acknowledge_keywords = ["continue", "proceed", "okay", "ok", "yes", "go ahead", "confirm"]
             
             if any(keyword in message_lower for keyword in acknowledge_keywords):

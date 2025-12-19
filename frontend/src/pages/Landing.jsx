@@ -76,38 +76,141 @@ export default function Landing() {
                 </div>
             </header>
 
-            {/* Hero Section */}
-            <section className="w-full px-6 py-16 md:py-24 bg-slate-50">
-                <div className="max-w-3xl mx-auto text-center">
-                    <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 tracking-tight">
-                        LoanOps AI
-                    </h1>
-                    <p className="text-lg md:text-xl text-slate-700 mb-3">
-                        AI-assisted micro-loan operations for ₹5,000 – ₹50,000 loans
-                    </p>
-                    <p className="text-sm text-slate-500 mb-8">
-                        Human-in-the-loop, rule-based, auditable loan processing
-                    </p>
-                    <div className="flex items-center justify-center gap-4 flex-wrap">
-                        <Link
-                            to="/signup"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800 transition-colors"
-                        >
-                            Try Live Demo
-                            <ArrowRight size={16} />
-                        </Link>
-                        <Link
-                            to="/login"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-700 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
-                        >
-                            Login
-                        </Link>
+            {/* Hero Section — Two Column Layout */}
+            <section className="w-full px-6 py-20 md:py-28 bg-gradient-to-br from-white via-slate-50 to-blue-50/40 overflow-hidden">
+                <div className="max-w-6xl mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-16 items-center">
+
+                        {/* Left Column — Messaging (60%) */}
+                        <div className="lg:col-span-3 text-center lg:text-left">
+
+                            {/* Eyebrow Tag */}
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full mb-6">
+                                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
+                                <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                                    AI-Assisted Micro-Loan Processing
+                                </span>
+                            </div>
+
+                            {/* Primary Headline */}
+                            <h1 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold text-slate-900 leading-tight tracking-tight mb-5">
+                                <span className="block">AI-Orchestrated Loan</span>
+                                <span className="block">Processing for <span className="text-blue-600">Real-World</span> Micro-Loans</span>
+                            </h1>
+
+                            {/* Supporting Description */}
+                            <p className="text-lg text-slate-600 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
+                                From KYC to underwriting and sanctioning, LoanOps AI coordinates multiple agents with human-in-the-loop safeguards.
+                            </p>
+
+                            {/* CTA Buttons */}
+                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                                <Link
+                                    to="/signup"
+                                    className="group inline-flex items-center gap-2 px-7 py-3.5 bg-blue-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/25 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all duration-200"
+                                >
+                                    Try Live Demo
+                                    <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                                </Link>
+                                <a
+                                    href="#how-it-works"
+                                    className="inline-flex items-center gap-2 px-7 py-3.5 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                                >
+                                    View How It Works
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* Right Column — Product Visual (40%) */}
+                        <div className="lg:col-span-2 relative">
+                            <div className="relative bg-gradient-to-br from-white to-slate-50 rounded-2xl border border-slate-200/80 shadow-2xl shadow-slate-200/50 p-6 backdrop-blur-sm">
+
+                                {/* Visual Header */}
+                                <div className="flex items-center gap-2 mb-5 pb-4 border-b border-slate-100">
+                                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                                    <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
+                                    <span className="ml-3 text-xs font-medium text-slate-500">Agent Orchestration</span>
+                                </div>
+
+                                {/* Agent Flow Visual */}
+                                <div className="space-y-3">
+                                    {/* Agent 1 - Sales */}
+                                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                                            <User size={16} className="text-blue-600" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-slate-800">Sales Agent</p>
+                                            <p className="text-xs text-slate-500 truncate">Collecting loan intent...</p>
+                                        </div>
+                                        <CheckCircle size={16} className="text-emerald-500 shrink-0" />
+                                    </div>
+
+                                    {/* Connector */}
+                                    <div className="flex justify-center">
+                                        <div className="w-0.5 h-4 bg-gradient-to-b from-slate-200 to-blue-200"></div>
+                                    </div>
+
+                                    {/* Agent 2 - Verification */}
+                                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100 ring-2 ring-blue-200/50">
+                                        <div className="w-9 h-9 bg-blue-500 rounded-lg flex items-center justify-center shrink-0">
+                                            <FileSearch size={16} className="text-white" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-slate-800">Verification Agent</p>
+                                            <p className="text-xs text-blue-600">Processing KYC...</p>
+                                        </div>
+                                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin shrink-0"></div>
+                                    </div>
+
+                                    {/* Connector */}
+                                    <div className="flex justify-center">
+                                        <div className="w-0.5 h-4 bg-gradient-to-b from-blue-200 to-slate-200"></div>
+                                    </div>
+
+                                    {/* Agent 3 - Underwriting */}
+                                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 opacity-60">
+                                        <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
+                                            <Scale size={16} className="text-slate-400" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-slate-500">Underwriting Agent</p>
+                                            <p className="text-xs text-slate-400">Waiting...</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Connector */}
+                                    <div className="flex justify-center">
+                                        <div className="w-0.5 h-4 bg-slate-100"></div>
+                                    </div>
+
+                                    {/* Agent 4 - Sanction */}
+                                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 opacity-40">
+                                        <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
+                                            <Gavel size={16} className="text-slate-400" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-slate-400">Sanction Agent</p>
+                                            <p className="text-xs text-slate-300">Pending</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Decorative Glow */}
+                                <div className="absolute -z-10 inset-0 bg-gradient-to-br from-blue-100/50 via-transparent to-indigo-100/30 rounded-2xl blur-xl"></div>
+                            </div>
+
+                            {/* Background Decorative Elements */}
+                            <div className="absolute -z-20 -top-8 -right-8 w-32 h-32 bg-blue-100/60 rounded-full blur-3xl"></div>
+                            <div className="absolute -z-20 -bottom-8 -left-8 w-24 h-24 bg-indigo-100/60 rounded-full blur-2xl"></div>
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* How It Works */}
-            <section className="w-full px-6 py-16 bg-white">
+            <section id="how-it-works" className="w-full px-6 py-16 bg-white scroll-mt-8">
                 <div className="max-w-4xl mx-auto">
                     <h2 className="text-xl font-bold text-slate-900 mb-2 text-center">How It Works</h2>
                     <p className="text-sm text-slate-500 mb-10 text-center">Four-step loan processing pipeline</p>
@@ -244,7 +347,7 @@ export default function Landing() {
                         <span className="text-sm font-semibold text-white">LoanOps AI</span>
                     </div>
                     <p className="text-xs text-slate-400">
-                        Built for CodeRed Hackathon • Agentic Loan Orchestrator
+                        AI-Orchestrated Micro-Loan Processing
                     </p>
                 </div>
             </footer>

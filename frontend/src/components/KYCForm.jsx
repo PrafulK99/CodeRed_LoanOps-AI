@@ -74,7 +74,22 @@ export default function KYCForm({ sessionId, onComplete }) {
         setError(null)
 
         try {
-            // Prepare KYC payload
+            // Read full Video KYC metadata from sessionStorage (stored by VideoKYC component)
+            // This includes all verification fields: duration, faceDetected, faceMatchScore, etc.
+            const videoKycDataStr = sessionStorage.getItem('videoKYCData')
+            let videoKycPayload = null
+
+            if (videoKycDataStr) {
+                try {
+                    videoKycPayload = JSON.parse(videoKycDataStr)
+                    // STEP 1: Log Video KYC data being sent to backend
+                    console.log("[VIDEO KYC SUBMIT]", videoKycPayload)
+                } catch (e) {
+                    console.warn('[KYCForm] Could not parse videoKYCData')
+                }
+            }
+
+            // Prepare KYC payload matching backend expectations
             const kycPayload = {
                 personal: personalDetails,
                 identity: identityDetails,
@@ -84,6 +99,10 @@ export default function KYCForm({ sessionId, onComplete }) {
                     idProof: documents.idProof?.name || null,
                     incomeProof: documents.incomeProof?.name || null
                 },
+                // Include full Video KYC metadata if completed
+                // Backend expects: submitted, duration, faceDetected, livenessCheck, 
+                // lightingScore, faceMatchScore, timestamp
+                videoKyc: videoKycPayload,
                 submittedAt: new Date().toISOString(),
                 verificationMode: 'DEMO_SIMULATED'
             }
@@ -173,10 +192,10 @@ export default function KYCForm({ sessionId, onComplete }) {
                 <div className="space-y-3 mb-6">
                     {/* PAN Verification Status - Primary Display */}
                     <div className={`flex items-start gap-3 p-3 rounded-xl border ${isPanVerified
-                            ? 'bg-emerald-50 border-emerald-100'
-                            : isInvalidFormat
-                                ? 'bg-red-50 border-red-100'
-                                : 'bg-amber-50 border-amber-100'
+                        ? 'bg-emerald-50 border-emerald-100'
+                        : isInvalidFormat
+                            ? 'bg-red-50 border-red-100'
+                            : 'bg-amber-50 border-amber-100'
                         }`}>
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${isPanVerified ? 'bg-emerald-200' : isInvalidFormat ? 'bg-red-200' : 'bg-amber-200'
                             }`}>
