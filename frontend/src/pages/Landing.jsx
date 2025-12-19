@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ShieldCheck, ArrowRight, User, FileSearch, Scale, Gavel, CheckCircle, Info, ChevronDown } from 'lucide-react'
+import FAQChatbot from '../components/FAQChatbot'
 
 // Static FAQ data - no backend, no LLM, deterministic
 const faqData = [
@@ -247,6 +248,8 @@ export default function Landing() {
                     </p>
                 </div>
             </footer>
+            {/* FAQ Chatbot Widget */}
+            <FAQChatbot />
 
         </div>
     )
